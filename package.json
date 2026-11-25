@@ -11,7 +11,9 @@
     "db:push": "supabase db push",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "db:reset-data": "node --env-file=.env.local scripts/reset-data.mjs",
-    "admin:create": "node --env-file=.env.local scripts/create-super-admin.mjs"
+    "admin:create": "node --env-file=.env.local scripts/create-super-admin.mjs",
+    "db:migrate:prod": "node --env-file=.env.production.local scripts/migrate.mjs",
+    "admin:create:prod": "node --env-file=.env.production.local scripts/create-super-admin.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -242,6 +242,7 @@ supabase/migrations/      Schema, RLS policies, Postgres functions, cron jobs
 | `pnpm test:db` | Database tests in an in-memory Postgres (PGlite). No Docker or Supabase needed |
 | `pnpm db:migrate` | Apply new migrations to the database in `DATABASE_URL` |
 | `pnpm admin:create` | Create or promote the super admin |
+| `pnpm db:migrate:prod` / `pnpm admin:create:prod` | Same, using `.env.production.local` (your live project) |
 | `pnpm db:reset-data` | Delete all mess data, keeping the super admin (asks for confirmation) |
 
 ## Testing

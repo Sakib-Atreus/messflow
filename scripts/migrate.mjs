@@ -14,6 +14,17 @@ if (!url || url.includes("YOUR-PASSWORD")) {
 const dir = new URL("../supabase/migrations/", import.meta.url);
 const files = fs.readdirSync(dir).filter((f) => /^\d+_.+\.sql$/.test(f)).sort();
 
+let parsedHost = "";
+try {
+  parsedHost = new URL(url).hostname;
+} catch {}
+if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(parsedHost) && !url.includes("localhost")) {
+  console.error(`✗ DATABASE_URL can't be read. Your database password probably contains characters like @ # / ? : $ !
+  Easiest fix: Supabase → Project Settings → Database → Reset database password → "Generate a password"
+  (letters and numbers only), then put it in DATABASE_URL.`);
+  process.exit(1);
+}
+
 const client = new pg.Client({ connectionString: url, ssl: url.includes("localhost") ? false : { rejectUnauthorized: false } });
 try {
   await client.connect();
