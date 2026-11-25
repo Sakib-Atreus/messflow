@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.messflow_rho.twa",
+        "sha256_cert_fingerprints": ["CF:4B:FB:28:4C:5E:B3:82:D5:78:34:EB:B6:AF:FB:89:90:5B:7B:CA:8E:B8:8A:CD:78:FC:D2:46:E1:47:C2:5A"]
+      }
+    }]
