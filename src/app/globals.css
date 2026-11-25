@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/* dark mode follows the .dark class on <html> (set by the theme script: light / dark / system) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  /* greens taken from the MessFlow logo */
+  --color-brand-50: #eefbf0;
+  --color-brand-100: #d5f5dc;
+  --color-brand-200: #b2eabf;
+  --color-brand-300: #8ad99c;
+  --color-brand-400: #4fc06a;
+  --color-brand-500: #22a64b;
+  --color-brand-600: #0e8f3f;
+  --color-brand-700: #087234;
+  --color-brand-800: #065c2d;
+  --color-brand-900: #044a26;
+  --color-brand-950: #022b16;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  /* chart roles - validated as pairs (CVD + contrast) for each surface */
+  --chart-1: #0e8f3f;        /* brand green: meals, money in */
+  --chart-2: #2a78d6;        /* blue: bazar spent, "gets back" */
+  --chart-neg: #eb6834;      /* orange: "owes" */
+  --chart-grid: #e2e8f0;
+  --chart-axis: #64748b;
+  --chart-surface: #ffffff;
 }
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root.dark {
+  color-scheme: dark;
+  --chart-1: #22a64b;
+  --chart-2: #3987e5;
+  --chart-neg: #d95926;
+  --chart-grid: #1e293b;
+  --chart-axis: #94a3b8;
+  --chart-surface: #0f172a;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+}
+
+/* toasts / dialogs slide in gently */
+/* slide only - no scaling, so text stays pin-sharp after the animation */
+@keyframes mf-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes mf-side { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
+.animate-in { animation: mf-in .18s ease-out; }
+dialog[open] { animation: mf-in .2s ease-out; }
+@media (min-width: 40rem) { dialog.mf-side[open] { animation-name: mf-side; } }
+@media (prefers-reduced-motion: reduce) { .animate-in, dialog[open] { animation: none; } }
+
+/* "Edit", "Bills", "Reset password"… - expandable sections look like small buttons with a turning arrow */
+.mf-sum {
+  @apply inline-flex min-h-9 cursor-pointer select-none list-none items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950/50;
+}
+.mf-sum::-webkit-details-marker { display: none; }
+.mf-sum::after {
+  content: ""; width: .45rem; height: .45rem; margin-left: .1rem;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform .15s;
+}
+details[open] > .mf-sum::after { transform: rotate(-135deg) translateY(-1px); }
+
+/* bigger tap targets for native selects/dates, and the theme's accent everywhere */
+select { cursor: pointer; }
+:root { accent-color: var(--color-brand-600); }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; color: black; }
 }

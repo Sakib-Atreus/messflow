@@ -1,27 +1,43 @@
 {
-  "name": "scaffold",
+  "name": "messflow",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:db": "node scripts/test-db.mjs",
+    "db:push": "supabase db push",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "db:reset-data": "node --env-file=.env.local scripts/reset-data.mjs",
+    "admin:create": "node --env-file=.env.local scripts/create-super-admin.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.78.0",
+    "next": "15.5.29",
+    "next-intl": "^4.15.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.29"
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.1",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@electric-sql/pglite": "~0.3.16",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
-    "@eslint/eslintrc": "^3"
+    "pg": "^8.23.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
