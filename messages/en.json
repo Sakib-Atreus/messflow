@@ -918,6 +918,8 @@
       "tea": "Tea leaves",
       "soap": "Dish soap",
       "gas": "Gas finished"
-    }
+    },
+    "waitingTitle": "Sent - waiting to be bought",
+    "waitingHelp": "Each line goes away once someone buys it."
   }
 }

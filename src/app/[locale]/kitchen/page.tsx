@@ -13,6 +13,7 @@ import { fmtDate, fmtNumber, fmtTime } from "@/lib/format";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
 import { NeedsPanel } from "@/components/needs-panel";
+import { NeedsList } from "@/components/needs-list";
 
 type Kitchen = {
   mess: string;
@@ -130,6 +131,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
         })}
 
         <NeedsPanel messId={cook.mess_id} pending={(open ?? []).map((x) => x.item as string)} />
+        <NeedsList supabase={supabase} messId={cook.mess_id} locale={locale} forCook />
       </main>
     </div>
   );
