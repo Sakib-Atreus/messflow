@@ -254,6 +254,10 @@ messflow/
 - [x] Khala's leave: meal off for everyone, "I'll cook" offers with manager approval, leave record
 - [x] "Need from bazar": khala taps items / writes / records voice; manager + bazar duty notified; everyone ticks "bought"
 - [x] Android APK via PWABuilder (signed, with assetlinks.json)
+- [x] Public landing page (rotating headline, features, 3 steps, install, footer); logged-in people skip it
+- [x] Language remembered for a year and after login on a new phone; Bangla by default; theme kept when switching language
+- [x] Managers reset a member's forgotten password (with safety rules); super admin for everyone else
+- [x] Backups: `pnpm db:backup` (full data + logins, restore tested), backup card in the admin panel, weekly + month-close reminders
 - [ ] Manager handover
 
 ---

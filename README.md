@@ -107,6 +107,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Setup checklist for new managers
 - Installable PWA with offline shell
 - Public landing page for visitors (logged-in people go straight to their dashboard, khala to her kitchen page)
+- Remembers each person's language (for a year, on every phone after login) and follows the phone's light / dark mode
 
 ## How the money works
 
