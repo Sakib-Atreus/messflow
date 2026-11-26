@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { MonthNav, parseMonth } from "@/components/month-nav";
 import { Avatar, Badge, Card, cn, Empty, PageTitle, Stat } from "@/components/ui";
 import { getContext } from "@/lib/mess";
+import { getOpening } from "@/lib/opening";
 import { addDays, monthEnd, todayDhaka } from "@/lib/dates";
 import { fmtDate, fmtMoney, fmtNumber } from "@/lib/format";
 import { getAvatars, getMembers, getMonthSummary, mealKinds, mealValue, weightedMeals } from "@/lib/queries";
@@ -24,10 +25,12 @@ export default async function SheetPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { supabase, mess, me } = await getContext();
+  const opening = await getOpening(supabase, mess.id);
   const t = await getTranslations();
   const sp = await searchParams;
   const today = todayDhaka();
   const month = parseMonth(sp.month, today);
+  const carryLabel = opening.month === month ? t("opening.line") : t("person.previous");
   const tab: Tab = (TABS as readonly string[]).includes(sp.tab ?? "") ? (sp.tab as Tab) : "meals";
   const end = monthEnd(month);
   const lastDay = end < today ? end : today; // meals only count up to today
@@ -484,7 +487,7 @@ export default async function SheetPage({
                           </div>
                           <dl className="mt-2 grid grid-cols-3 gap-2 text-xs tabular-nums">
                             {([
-                              [t("person.previous"), money(p.carry_in)],
+                              [carryLabel, money(p.carry_in)],
                               [t("person.paid"), money(p.deposits)],
                               [t("sheet.colBills"), money(p.fixed_share)],
                               [t("sheet.colForMeals"), money(w.forMeals)],
@@ -508,7 +511,7 @@ export default async function SheetPage({
                     <thead>
                       <tr className="border-b border-slate-200 text-right text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700">
                         <th className="py-2 pr-3 text-left font-medium">{t("common.member")}</th>
-                        <th className="px-2 py-2 font-medium">{t("person.previous")}</th>
+                        <th className="px-2 py-2 font-medium">{carryLabel}</th>
                         <th className="px-2 py-2 font-medium">{t("person.paid")}</th>
                         <th className="px-2 py-2 font-medium">− {t("sheet.colBills")}</th>
                         <th className="px-2 py-2 font-medium text-slate-700 dark:text-slate-200">= {t("sheet.colForMeals")}</th>

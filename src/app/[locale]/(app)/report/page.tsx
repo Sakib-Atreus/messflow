@@ -6,6 +6,7 @@ import { ReportActions } from "@/components/report-actions";
 import { Badge, btn, Card, PageTitle, Stat, cn } from "@/components/ui";
 import { closeMonth, reopenMonth } from "@/lib/actions/mess";
 import { getContext } from "@/lib/mess";
+import { getOpening } from "@/lib/opening";
 import { monthEnd, todayDhaka } from "@/lib/dates";
 import { fmtMoney, fmtMonth, fmtNumber } from "@/lib/format";
 import { getMonthSummary } from "@/lib/queries";
@@ -52,14 +53,16 @@ export default async function ReportPage({
   const sum = (k: "meals" | "meal_cost" | "fixed_share" | "deposits" | "carry_in" | "balance") =>
     s.members.reduce((a, m) => a + m[k], 0);
 
-  const headers = [t("common.member"), t("nav.meals"), t("report.mealCost"), t("report.fixedShare"), t("report.deposited"), t("report.carryIn"), t("report.balance")];
+  const opening = await getOpening(supabase, mess.id);
+  const carryHead = opening.month === month ? t("opening.line") : t("report.carryIn");
+  const headers = [t("common.member"), t("nav.meals"), t("report.mealCost"), t("report.fixedShare"), t("report.deposited"), carryHead, t("report.balance")];
   // laid out like the paper/Excel sheet: one row per person with every bill, then payments, then the bazar list
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const csvRows: (string | number)[][] = [
     [`${mess.name} - ${fmtMonth(locale, month)}`],
     [t("dashboard.mealRate"), s.meal_rate, t("dashboard.totalBazar"), s.total_bazar, t("dashboard.totalMeals"), s.total_meals],
     [],
-    [t("common.member"), t("nav.meals"), t("report.mealCost"), ...billTitles, t("person.totalCost"), t("person.paid"), t("report.carryIn"), t("report.balance"), ""],
+    [t("common.member"), t("nav.meals"), t("report.mealCost"), ...billTitles, t("person.totalCost"), t("person.paid"), carryHead, t("report.balance"), ""],
     ...s.members.map((m) => [
       m.display_name,
       m.meals,

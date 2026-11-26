@@ -356,6 +356,31 @@ ok('avatar: user can set own avatar_url', (await as(B, `select avatar_url from p
   await throws('needs: a stranger cannot tick it', () => as(E, `select mark_need_bought($1)`, [oil]), 'FORBIDDEN');
 }
 
+// ---- opening balances (old notebook dues / credits)
+{
+  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false)`); // set up as the server, not as the last test user
+  const om = (await db.query(`insert into messes (name, created_by) values ('Opening Mess', $1) returning id`, [A])).rows[0].id;
+  const addM = async (name, extra = {}) => (await db.query(
+    `insert into mess_members (mess_id, display_name, joined_on, user_id, role, claim_code) values ($1, $2, date_trunc('month', today_dhaka()), $3, $4, null) returning id`,
+    [om, name, extra.user ?? null, extra.role ?? 'member'])).rows[0].id;
+  await addM('Boss', { user: A, role: 'manager' });
+  await addM('Bee', { user: B });
+  const kid = await addM('Karim'), rid = await addM('Rahim');
+  const rows = (x) => JSON.stringify(x);
+  await throws('opening: members cannot set it', () => as(B, `select set_opening_balances($1, $2)`, [om, rows([{ member_id: kid, amount: -1200 }])]), 'FORBIDDEN');
+  ok('opening: manager saves Karim −1200, Rahim +800', (await as(A, `select set_opening_balances($1, $2) n`, [om, rows([{ member_id: kid, amount: -1200 }, { member_id: rid, amount: 800 }])])).rows[0].n === 2);
+  const sm = (await as(A, `select month_summary($1, today_dhaka()) s`, [om])).rows[0].s;
+  const row = (id) => sm.members.find((x) => x.member_id === id);
+  ok('opening: counts as carried in for this month', Number(row(kid).carry_in) === -1200 && Number(row(rid).carry_in) === 800, JSON.stringify([row(kid)?.carry_in, row(rid)?.carry_in]));
+  ok('opening: balance starts from it', Number(row(kid).balance) === -1200 - Number(row(kid).meal_cost) - Number(row(kid).fixed_share));
+  ok('opening: bills and deposits are not touched', Number(sm.total_fixed) === 0 && sm.members.every((x) => Number(x.deposits) === 0));
+  ok('opening: members can see it', (await as(B, `select count(*)::int n from opening_balances where mess_id=$1`, [om])).rows[0].n === 2);
+  await as(A, `select set_opening_balances($1, $2)`, [om, rows([{ member_id: rid, amount: 0 }])]);
+  ok('opening: 0 removes it', (await db.query(`select count(*)::int n from opening_balances where member_id=$1`, [rid])).rows[0].n === 0);
+  await db.query(`insert into months (mess_id, month, status) values ($1, (date_trunc('month', today_dhaka()) - interval '1 month')::date, 'closed')`, [om]);
+  await throws('opening: locked once the mess has closed a month', () => as(A, `select set_opening_balances($1, $2)`, [om, rows([{ member_id: kid, amount: -5 }])]), 'OPENING_LOCKED');
+}
+
 // ---- backup log + app-wide reminders
 await db.query(`insert into private.backup_log (label, size_kb) values ('live', 61)`);
 ok('backup: super admin sees when the last backup was taken', (await as(S, `select last_backup() t`)).rows[0].t !== null);

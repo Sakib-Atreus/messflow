@@ -258,6 +258,7 @@ messflow/
 - [x] Language remembered for a year and after login on a new phone; Bangla by default; theme kept when switching language
 - [x] Managers reset a member's forgotten password (with safety rules); super admin for everyone else
 - [x] Backups: `pnpm db:backup` (full data + logins, restore tested), backup card in the admin panel, weekly + month-close reminders
+- [x] Opening balance from the old notebook (first month only, then locked)
 - [ ] Manager handover
 
 ---

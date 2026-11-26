@@ -70,6 +70,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Daily menu ("what to cook") written by the manager and shown to everyone
 
 **Money**
+- Opening balance: when moving from a notebook, enter each person's old due or credit once (first month only)
 - Bazar entries, with the meal rate calculated from bazar only
 - Fixed costs (rent, gas, electricity, khala, internet…) split equally or with custom shares
 - Bills that repeat every month, and a choice of which bills a member joining mid-month pays

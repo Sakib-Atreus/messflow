@@ -6,7 +6,7 @@ import { CheckCircle2, ChevronRight, Circle, Rocket } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "./ui";
 
-export type SetupStep = { key: string; done: boolean; href: string };
+export type SetupStep = { key: string; done: boolean; href: string; /** shown, but not needed to finish */ optional?: boolean };
 
 /** First-time setup for a manager; ticks itself off, can be hidden (remembered on this device). */
 export function SetupChecklist({ messId, steps }: { messId: string; steps: SetupStep[] }) {
@@ -20,8 +20,9 @@ export function SetupChecklist({ messId, steps }: { messId: string; steps: Setup
       setHidden(false);
     }
   }, [storageKey]);
-  const done = steps.filter((s) => s.done).length;
-  if (hidden || done === steps.length) return null;
+  const required = steps.filter((s) => !s.optional);
+  const done = required.filter((s) => s.done).length;
+  if (hidden || done === required.length) return null;
 
   return (
     <section className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-4 shadow-sm sm:p-5 dark:border-brand-900/60 dark:from-brand-950/40 dark:to-slate-900">
@@ -32,7 +33,7 @@ export function SetupChecklist({ messId, steps }: { messId: string; steps: Setup
           </span>
           <div>
             <h2 className="font-semibold">{t("title")}</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300">{t("progress", { done, total: steps.length })}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t("progress", { done, total: required.length })}</p>
           </div>
         </div>
         <button
@@ -49,7 +50,7 @@ export function SetupChecklist({ messId, steps }: { messId: string; steps: Setup
         </button>
       </div>
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-brand-100 dark:bg-brand-950">
-        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${(done / steps.length) * 100}%` }} />
+        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${(done / required.length) * 100}%` }} />
       </div>
       <ul className="grid gap-1.5 sm:grid-cols-2">
         {steps.map((s) => (
@@ -62,7 +63,10 @@ export function SetupChecklist({ messId, steps }: { messId: string; steps: Setup
               )}
             >
               {s.done ? <CheckCircle2 className="size-5 shrink-0 text-brand-600" /> : <Circle className="size-5 shrink-0 text-slate-300" />}
-              <span className={cn("flex-1", s.done && "line-through")}>{t(`step_${s.key}`)}</span>
+              <span className={cn("flex-1", s.done && "line-through")}>
+                {t(`step_${s.key}`)}
+                {s.optional && <span className="ml-1 text-xs font-normal text-slate-500">({t("optional")})</span>}
+              </span>
               {!s.done && <ChevronRight className="size-4 text-slate-400" />}
             </Link>
           </li>

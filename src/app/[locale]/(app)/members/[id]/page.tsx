@@ -8,6 +8,7 @@ import { PrintButton } from "@/components/print-button";
 import { Avatar, Badge, Card, cn, Empty } from "@/components/ui";
 import { COST_CATEGORIES } from "@/lib/costs";
 import { getContext } from "@/lib/mess";
+import { getOpening } from "@/lib/opening";
 import { monthEnd, todayDhaka } from "@/lib/dates";
 import { fmtDate, fmtMoney, fmtMonth, fmtNumber } from "@/lib/format";
 import { getAvatars, getMembers, getMonthSummary, mealKinds, weightedMeals } from "@/lib/queries";
@@ -29,6 +30,7 @@ export default async function MemberDetails({
   const { locale, id } = await params;
   setRequestLocale(locale);
   const { supabase, mess, me } = await getContext();
+  const opening = await getOpening(supabase, mess.id);
   const t = await getTranslations();
   const today = todayDhaka();
   const month = parseMonth((await searchParams).month, today);
@@ -66,6 +68,7 @@ export default async function MemberDetails({
   const meals = row?.meals ?? 0;
   const mealCost = row?.meal_cost ?? 0;
   const carry = row?.carry_in ?? 0;
+  const isOpening = opening.month === month;
   const balance = row?.balance ?? 0;
   const owes = balance < -0.004;
   const settled = Math.abs(balance) < 0.005;
@@ -97,7 +100,7 @@ export default async function MemberDetails({
     ...bills.map((b) => `${b.title}: ${money(b.amount)}`),
     `${t("person.totalCost")}: ${money(totalCost)}`,
     `${t("person.paid")}: ${money(paid)}`,
-    ...(Math.abs(carry) > 0.004 ? [`${t("person.previous")}: ${money(carry)}`] : []),
+    ...(Math.abs(carry) > 0.004 ? [`${isOpening ? t("opening.line") : t("person.previous")}: ${money(carry)}`] : []),
     `${settled ? t("person.settled") : owes ? t("person.due") : t("person.getsBack")}: ${money(Math.abs(balance))}`,
   ].join("\n");
 
@@ -177,9 +180,9 @@ export default async function MemberDetails({
             <div className="py-1">
               {line(t("person.paid"), paid, { sign: "−" })}
               {Math.abs(carry) > 0.004 &&
-                line(carry < 0 ? t("person.previousDue") : t("person.previousCredit"), Math.abs(carry), {
+                line(isOpening ? (carry < 0 ? t("opening.due") : t("opening.credit")) : carry < 0 ? t("person.previousDue") : t("person.previousCredit"), Math.abs(carry), {
                   sign: carry < 0 ? "+" : "−",
-                  sub: t("person.previousHelp"),
+                  sub: isOpening ? t("opening.lineHelp") : t("person.previousHelp"),
                 })}
             </div>
             <div

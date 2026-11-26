@@ -12,6 +12,8 @@ import { BillChoices, type BillOption } from "@/components/bill-choices";
 import { RowPanels } from "@/components/row-panels";
 import { Drawer } from "@/components/drawer";
 import { CookCard } from "@/components/cook-card";
+import { OpeningBalanceForm } from "@/components/opening-balance";
+import { getOpening } from "@/lib/opening";
 import { ListSearch } from "@/components/list-search";
 import { createAdminClient } from "@/lib/supabase/server";
 import { displayLogin, tempPassword } from "@/lib/login-id";
@@ -21,10 +23,18 @@ import { fmtDate, fmtMoney, fmtMonth, fmtNumber } from "@/lib/format";
 import { getAvatars, getMembers, getMonthSummary } from "@/lib/queries";
 import type { Member, MessRole } from "@/lib/types";
 
-export default async function MembersPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function MembersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ opening?: string }>;
+}) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const openOpening = (await searchParams).opening === "1";
   const { supabase, mess, me, can, isManager } = await getContext();
+  const opening = await getOpening(supabase, mess.id);
   const canManage = can("members");
   const t = await getTranslations();
   const month = monthStart(todayDhaka());
@@ -183,7 +193,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
                 [t("sheet.colMeal"), money(row.meal_cost)],
                 [t("sheet.colBills"), money(row.fixed_share)],
                 [t("person.paid"), money(row.deposits)],
-                ...(Math.abs(row.carry_in) > 0.004 ? [[t("person.previous"), money(row.carry_in)]] : []),
+                ...(Math.abs(row.carry_in) > 0.004 ? [[opening.month === month ? t("opening.line") : t("person.previous"), money(row.carry_in)]] : []),
               ] as [string, string][]).map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
                   <div className="text-xs text-slate-500">{k}</div>
@@ -380,10 +390,20 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
       <PageTitle
         sub={t("members.subtitle", { count: active.length })}
         action={
-          canManage && (
-            <Drawer label={t("members.add")} title={t("members.add")} icon="add">
-              {addForm}
-            </Drawer>
+          (canManage || (isManager && !opening.locked)) && (
+            <div className="flex flex-wrap gap-2">
+              {/* old notebook balances: manager only, until the first month is closed */}
+              {isManager && !opening.locked && (
+                <Drawer label={t("opening.button")} title={t("opening.title")} icon="balance" side={false} className={btn.secondary} defaultOpen={openOpening}>
+                  <OpeningBalanceForm members={active} amounts={opening.amounts} />
+                </Drawer>
+              )}
+              {canManage && (
+                <Drawer label={t("members.add")} title={t("members.add")} icon="add">
+                  {addForm}
+                </Drawer>
+              )}
+            </div>
           )
         }
       >

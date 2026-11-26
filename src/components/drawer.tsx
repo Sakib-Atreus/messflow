@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChefHat, Info, UserPlus } from "lucide-react";
+import { ChefHat, Info, Scale, UserPlus } from "lucide-react";
 import { Modal } from "./modal";
 import { btn } from "./ui";
 
-const ICONS = { add: UserPlus, details: Info, chef: ChefHat } as const;
+const ICONS = { add: UserPlus, details: Info, chef: ChefHat, balance: Scale } as const;
 
 /**
  * A button that opens its content in a side panel (bottom sheet on phones), or a centred dialog with
  * `side={false}`. Content stays mounted while open. `badge` shows a red count on the button.
  */
 export function Drawer({
-  label, title, icon, className, children, side = true, badge,
-}: { label: ReactNode; title: ReactNode; icon?: keyof typeof ICONS; className?: string; children: ReactNode; side?: boolean; badge?: number }) {
-  const [open, setOpen] = useState(false);
+  label, title, icon, className, children, side = true, badge, defaultOpen = false,
+}: {
+  label: ReactNode; title: ReactNode; icon?: keyof typeof ICONS; className?: string; children: ReactNode;
+  side?: boolean; badge?: number; /** open straight away (e.g. arriving from a link) */ defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const Icon = icon ? ICONS[icon] : null;
   return (
     <>

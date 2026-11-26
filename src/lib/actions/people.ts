@@ -332,3 +332,20 @@ export async function resetMemberPassword(_: ActionResult, fd: FormData): Promis
   if ("error" in r) return { error: r.error };
   return done({ message: "members.passwordReset", detail: loginDetail(r.login, r.password) });
 }
+
+// ---------------------------------------------------------------- opening balances
+/** Manager: everyone's old notebook balance in one go (due_<id> / credit_<id> fields, taka). */
+export async function saveOpeningBalances(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { supabase, mess, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const num = (k: string) => {
+    const v = Number(str(fd, k).replace(/,/g, "") || 0);
+    return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : NaN;
+  };
+  const ids = [...new Set([...fd.keys()].filter((k) => /^(due|credit)_/.test(k)).map((k) => k.slice(k.indexOf("_") + 1)))];
+  const rows = ids.map((id) => ({ member_id: id, amount: num(`credit_${id}`) - num(`due_${id}`) }));
+  if (rows.some((r) => Number.isNaN(r.amount))) return { error: "INVALID_INPUT" };
+  const { error } = await supabase.rpc("set_opening_balances", { p_mess: mess.id, p_rows: rows });
+  if (error) return { error: toErrorKey(error) };
+  return done({ message: "opening.saved" });
+}

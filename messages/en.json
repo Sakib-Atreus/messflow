@@ -404,7 +404,8 @@
     "SAME_EMAIL": "That's already your email.",
     "WRONG_PASSWORD": "Current password is wrong.",
     "COOK_LEAVE": "Khala is on leave for this meal and nobody is cooking yet. Tap \"I'll cook\" if you will.",
-    "RESET_NOT_ALLOWED": "This person is also in another mess or is an admin. Ask the super admin to reset it."
+    "RESET_NOT_ALLOWED": "This person is also in another mess or is an admin. Ask the super admin to reset it.",
+    "OPENING_LOCKED": "Opening balances are locked because a month has already been closed."
   },
   "roster": {
     "title": "Bazar duty",
@@ -828,7 +829,9 @@
     "step_logins": "Give members an app login (or share the invite code)",
     "step_bills": "Add this month's rent and bills",
     "step_duty": "Plan bazar duty (weekly schedule)",
-    "step_notify": "Turn on notifications on your phone"
+    "step_notify": "Turn on notifications on your phone",
+    "step_opening": "Old balances from your notebook",
+    "optional": "optional"
   },
   "cook": {
     "title": "Cook / Khala",
@@ -989,5 +992,20 @@
     "h2": "No more mismatched accounts at month end",
     "h3": "From meals to bills, all in one place",
     "showLine": "Show line {n}"
+  },
+  "opening": {
+    "button": "Opening balance",
+    "title": "Opening balance (from your notebook)",
+    "help": "Moving from a notebook? Enter each person's old balance once. \"Owes\" = they owe the mess; \"Is owed\" = the mess owes them. It's carried into this month like last month's balance, so this month's bills and deposits stay real. Leave empty for nobody.",
+    "member": "Member",
+    "owes": "Owes",
+    "isOwed": "Is owed",
+    "save": "Save opening balances",
+    "saved": "Opening balances saved.",
+    "lockNote": "You can change these until you close your first month. After that they're locked into that month's bill.",
+    "line": "Opening balance (notebook)",
+    "due": "Old due (from notebook)",
+    "credit": "Old credit (from notebook)",
+    "lineHelp": "From the mess notebook, before using the app"
   }
 }

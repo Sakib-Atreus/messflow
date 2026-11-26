@@ -21,6 +21,7 @@ import { SetupChecklist } from "@/components/setup-checklist";
 import { menuLine, type Menu } from "@/components/menu-card";
 import { LeaveBanner } from "@/components/leave-banner";
 import { closedByLeave, getLeaves } from "@/lib/leave";
+import { getOpening } from "@/lib/opening";
 
 export default async function Dashboard({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -61,6 +62,8 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const todayMenu = menuLine(menuRow as Menu, kinds, (k) => t(`meal.${k}`), locale);
   const leaves = await getLeaves(supabase, mess.id, today, tomorrow);
   const closed = closedByLeave(leaves);
+  const opening = await getOpening(supabase, mess.id);
+  const carryLabel = opening.month === month ? t("opening.line") : t("report.carryIn");
   const todayMeals = monthMeals.filter((m) => m.date === today);
   // first-time setup for managers: which steps are already done
   const setup = isManager && !isVirtual
@@ -74,6 +77,8 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
         { key: "bills", done: (fixed.data ?? []).length > 0, href: "/costs" },
         { key: "duty", done: (weekly.count ?? 0) + (roster.count ?? 0) > 0, href: "/roster" },
         { key: "notify", done: (push.count ?? 0) > 0, href: "/more" },
+        // old notebook balances: optional, and only until the first month is closed
+        ...(opening.locked ? [] : [{ key: "opening", done: opening.amounts.size > 0, href: "/members?opening=1", optional: true }]),
       ])
     : null;
   const avatars = await getAvatars(supabase, members.map((m) => m.user_id));
@@ -285,7 +290,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
                     [t("dashboard.billMeals", { n: fmtNumber(locale, mine.meals) }), fmtMoney(locale, mine.meal_cost)],
                     [t("dashboard.billFixed"), fmtMoney(locale, mine.fixed_share)],
                     [t("dashboard.billPaid"), fmtMoney(locale, mine.deposits)],
-                    ...(Math.abs(mine.carry_in) > 0.004 ? [[t("report.carryIn"), fmtMoney(locale, mine.carry_in)]] : []),
+                    ...(Math.abs(mine.carry_in) > 0.004 ? [[carryLabel, fmtMoney(locale, mine.carry_in)]] : []),
                   ].map(([k, v]) => (
                     <div key={k}>
                       <div className="opacity-80">{k}</div>
