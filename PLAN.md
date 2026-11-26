@@ -249,17 +249,21 @@ messflow/
 - [x] My profile: photo upload (Supabase Storage, resized on device), name/phone, add or change login email (username keeps working)
 - [x] Settings: meal-rate rounding, warning days, reminder times, new-member meals; repeating bills; undo; loading placeholders; setup checklist; notification inbox; meal calendar; search
 - [x] Meal money: what's left after bills, daily chart + forecast, low/finished warnings (banner, manager list, push)
+- [x] Cook (khala) login: one view-only kitchen page (meal counts, final / may change, auto refresh)
+- [x] Daily menu ("what to cook") by the manager, shown in each reader's language for common dishes, plus a note for khala
+- [x] Khala's leave: meal off for everyone, "I'll cook" offers with manager approval, leave record
+- [x] "Need from bazar": khala taps items / writes / records voice; manager + bazar duty notified; everyone ticks "bought"
+- [x] Android APK via PWABuilder (signed, with assetlinks.json)
 - [ ] Manager handover
-- [ ] Android APK via PWABuilder
 
 ---
 
 ## 8. Deployment (all free)
 
-1. Create a **Supabase** project (region: Singapore, the closest to Dhaka) and run the migrations.
-2. Enable `pg_cron` and schedule `generate_daily_meals`.
-3. Push the code to **GitHub** and import it into **Vercel**.
-4. Add environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `VAPID_*`.
+1. Create a **Supabase** project (region: Singapore, the closest to Dhaka) and run the migrations (`pnpm db:migrate:prod`). They also set up `pg_cron`, the storage buckets and the daily meal job.
+2. Push the code to **GitHub** and import it into **Vercel** (region `sin1` is set in `vercel.json`).
+3. Add environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+4. Supabase → Authentication → URL Configuration (site URL + redirect), and `private.config` (`notify_url`, `cron_secret`) for the 10-minute reminders. See README.
 5. Share the link `messflow-xxx.vercel.app` with members, who install it on their phones.
 6. (Optional) Build the APK with pwabuilder.com and share the file.
 

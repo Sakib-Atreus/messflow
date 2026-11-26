@@ -126,7 +126,8 @@ balance     = carried in + deposits − meal cost − your share of fixed costs
 | **Super admin** | `pnpm admin:create` | Every mess and user: approve messes, create managers, open any mess, reset passwords, block accounts |
 | **Manager** | Created by the super admin, or a new-mess request the super admin approves | Everything in their mess, including custom roles and settings |
 | **Custom role** | Given by the manager | Only the ticked permissions: meals, bazar, deposits, fixed costs, members, bazar duty, notices, close month, settings |
-| **Member** | Added by the manager, or invite code + approval | Own meals and guests before the cutoff, submit payments, view the mess's numbers |
+| **Member** | Added by the manager, or invite code + approval | Own meals and guests before the cutoff, submit payments, offer "I'll cook" on khala's leave days, tick bazar items as bought, view the mess's numbers |
+| **Cook (khala)** | Created by the manager (Members → Cook / Khala) | One view-only page: today's meal counts, the menu, the manager's note, leave days, and "Need from bazar" (tap items, write, or send a voice message). Not a member: no meals, bills or balance |
 
 New sign-ups can do nothing until they are approved: by the super admin for a new mess, or by the manager for a join request.
 
@@ -170,6 +171,10 @@ pnpm dev                     # http://localhost:3000
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | `npx web-push generate-vapid-keys` |
 | `VAPID_SUBJECT` | `mailto:` followed by your email |
 
+> **Two env files.** `.env.local` is your development database. If you also keep a `.env.production.local` for the live
+> project (used by `pnpm db:migrate:prod` / `pnpm admin:create:prod`), remember that Next.js also loads it for a local
+> `pnpm build` / `pnpm start`, so a local production build talks to the **live** database. Vercel uses its own settings.
+
 ## Deploying (free)
 
 ### 1. Supabase
@@ -210,6 +215,9 @@ Reminders (times and on/off are set per mess in **Settings**):
 | Meal money almost finished / finished | That member and people who collect deposits |
 | Deposit submitted, approved or rejected | Collectors / that member |
 | New notice, duty swap, approval requests | The people concerned |
+| Khala's leave marked or cancelled | Every member |
+| "I'll cook" offer / approved / rejected | Managers / every member / that member |
+| Khala needs something from the bazar | Managers and whoever has bazar duty today or tomorrow |
 
 Each member turns notifications on once per device under **More → Notifications**. Every notification is also kept in the in-app bell inbox.
 
@@ -229,6 +237,7 @@ public/sw.js              Service worker: install, offline shell, push
 scripts/                  migrate, create super admin, reset data, database tests
 src/app/[locale]/(app)/   Mess pages: dashboard, meals, sheet, bazar, deposits, costs, members, roster, notices, report, settings
 src/app/[locale]/admin/   Super admin panel
+src/app/[locale]/kitchen/ The cook's (khala's) single page
 src/app/api/cron/         Daily and 10-minute scheduled endpoints
 src/components/           UI components (forms, dialogs, charts, meal toggles…)
 src/lib/actions/          Server actions (all writes)
