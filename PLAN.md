@@ -106,6 +106,7 @@ balance       = previous_month_carry + approved_deposits − meal_cost − fixed
 ```
 - Positive balance means the mess owes the member (shown in green). Negative means the member is due (shown in red).
 - **Due reminders** are sent by push and as a WhatsApp message link.
+- **Opening balance:** a mess moving from a notebook enters each person's old due or credit once (Members → Opening balance, or the optional setup-checklist step). It is added to the first month's `previous_month_carry`, labelled "from notebook", and doesn't touch the meal rate or total bills. Manager only; locked once any month is closed.
 
 ### 4.7 Month closing
 - One click: freezes the meal rate, calculates every member's final bill, and **locks** the month (no more edits).
@@ -163,6 +164,8 @@ months              (id, mess_id, year_month, status[open|closed],
                      total_bazar, total_meals, meal_rate, closed_at, closed_by)
 member_month_bills  (month_id, member_id, meals, meal_cost, fixed_share,
                      deposits, carry_in, final_balance)
+opening_balances    (id, mess_id, member_id UNIQUE, month, amount,  -- + is owed, - owes
+                     updated_by, updated_at)
 notices             (id, mess_id, title, body, pinned, created_by)
 complaints          (id, mess_id, member_id null, body, status, anonymous)
 push_subscriptions  (id, user_id, endpoint, keys)
@@ -180,6 +183,7 @@ audit_log           (id, mess_id, actor_id, table_name, row_id,
 - `generate_daily_meals(date)`: run by `pg_cron` at 18:05 UTC (= 00:05 Dhaka).
 - `month_summary(mess_id, year_month)`: live meal rate and balances.
 - `close_month(mess_id, year_month)`: freezes bills, creates the carry-forward.
+- `set_opening_balances(mess_id, rows)`: manager only, first month only (`OPENING_LOCKED` after a month is closed); a 0 amount removes the entry.
 - Audit triggers on all money/meal tables.
 
 ---

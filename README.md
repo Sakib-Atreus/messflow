@@ -120,6 +120,7 @@ balance     = carried in + deposits − meal cost − your share of fixed costs
 
 - A positive balance means the mess owes you money; a negative balance is a due.
 - **Close month** freezes every bill and carries each balance into the next month. Nothing is deleted, and a closed month can be reopened.
+- **Opening balance** (moving from a notebook): in the first month the manager enters each person's old due or credit once, from **Members → Opening balance** or the setup checklist. It counts as that month's *carried in* (shown as "Old due / Old credit (from notebook)"), so it never changes the meal rate, bazar or total bills. It locks after the first month is closed.
 - **Meal-rate rounding** (Settings): *Exact* uses the full-precision rate. *Rounded* rounds the rate to 2 decimals first, which matches most hand-kept Excel sheets.
 
 ## Roles and permissions
@@ -288,7 +289,7 @@ pnpm db:backup        # live project → backups/messflow-live-YYYY-MM-DD_HHMM.s
 ## Testing
 
 `pnpm test:db` runs the database test suite against an in-memory Postgres. It covers meal generation, cutoffs,
-balances, month closing, permissions and Row Level Security.
+balances, month closing, opening balances, permissions and Row Level Security.
 
 ## License
 
