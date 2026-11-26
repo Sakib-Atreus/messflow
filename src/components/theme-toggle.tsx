@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Monitor, Moon, Sun } from "lucide-react";
 import type { Theme } from "@/lib/theme";
 import { cn } from "./ui";
@@ -9,7 +9,20 @@ import { cn } from "./ui";
 declare global {
   interface Window {
     __setTheme?: (t: Theme) => void;
+    __applyTheme?: () => void;
   }
+}
+
+/**
+ * Switching language re-renders <html> (new lang), which wipes the theme class the head script set.
+ * Put the saved theme back right away, before the browser paints.
+ */
+export function ThemeSync() {
+  const locale = useLocale();
+  useLayoutEffect(() => {
+    window.__applyTheme?.();
+  }, [locale]);
+  return null;
 }
 
 const ORDER: Theme[] = ["light", "dark", "system"];

@@ -10,6 +10,8 @@ export const THEME_SCRIPT = `(function () {
     root.dataset.theme = t;
     root.classList.toggle("dark", t === "dark" || (t === "system" && media.matches));
   }
+  // re-applied after the language changes: React rebuilds <html> then and drops the class
+  window.__applyTheme = function () { apply(); };
   window.__setTheme = function (t) {
     try { localStorage.setItem("theme", t); } catch (e) {}
     apply(t);

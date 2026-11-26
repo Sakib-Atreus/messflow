@@ -24,12 +24,22 @@ export async function signIn(_: ActionResult, fd: FormData): Promise<ActionResul
       if (data.user?.email) email = data.user.email;
     }
   }
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password: String(fd.get("password") ?? ""),
   });
   if (error) return { error: toErrorKey(error) };
-  return redirect({ href: "/dashboard", locale: await getLocale() });
+  // Which language to open in. Bangla is the default everywhere, so:
+  // - the login page is in English → they picked English on this phone: keep it and save it to the profile
+  // - otherwise → use the language saved on their profile (so a new phone opens in their language)
+  const page = await getLocale();
+  const { data: prof } = await supabase.from("profiles").select("locale").eq("id", data.user.id).maybeSingle();
+  let locale = prof?.locale === "en" ? "en" : "bn";
+  if (page === "en") {
+    locale = "en";
+    if (prof?.locale !== "en") await supabase.from("profiles").update({ locale: "en" }).eq("id", data.user.id);
+  }
+  return redirect({ href: "/dashboard", locale });
 }
 
 export async function signUp(_: ActionResult, fd: FormData): Promise<ActionResult> {

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "MessFlow - মেসফ্লো",
     short_name: "MessFlow",
     description: "Mess management: meals, bazar, deposits · মেসের মিল, বাজার ও হিসাব",
-    start_url: "/bn/dashboard",
+    start_url: "/", // opens in the language last used; logged-in people go straight to the app
     scope: "/",
     display: "standalone",
     orientation: "portrait",

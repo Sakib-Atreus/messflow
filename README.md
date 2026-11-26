@@ -106,6 +106,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Undo for deletes
 - Setup checklist for new managers
 - Installable PWA with offline shell
+- Public landing page for visitors (logged-in people go straight to their dashboard, khala to her kitchen page)
 
 ## How the money works
 
@@ -238,6 +239,7 @@ scripts/                  migrate, create super admin, reset data, database test
 src/app/[locale]/(app)/   Mess pages: dashboard, meals, sheet, bazar, deposits, costs, members, roster, notices, report, settings
 src/app/[locale]/admin/   Super admin panel
 src/app/[locale]/kitchen/ The cook's (khala's) single page
+src/app/[locale]/page.tsx Landing page (src/components/landing.tsx); images in public/landing/
 src/app/api/cron/         Daily and 10-minute scheduled endpoints
 src/components/           UI components (forms, dialogs, charts, meal toggles…)
 src/lib/actions/          Server actions (all writes)

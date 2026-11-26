@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { SwRegister } from "@/components/sw-register";
 import { FeedbackProvider } from "@/components/feedback";
+import { ThemeSync } from "@/components/theme-toggle";
 import { THEME_SCRIPT } from "@/lib/theme";
 import "../globals.css";
 
@@ -65,6 +66,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <FeedbackProvider>{children}</FeedbackProvider>
           <SwRegister />
+          <ThemeSync />
         </NextIntlClientProvider>
       </body>
     </html>
