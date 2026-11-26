@@ -23,6 +23,7 @@ async function claim(admin: SupabaseClient, messId: string, kind: string, key: s
 
 // ---------------------------------------------------------------- scheduled (every 10 min)
 export async function runScheduledNotifications(now = new Date()) {
+  await cleanupOldVoice().catch((e) => console.error("[messflow] voice cleanup:", e));
   if (!pushEnabled()) return { skipped: "push not configured" };
   const admin = createAdminClient();
   const today = todayDhaka(now);
@@ -361,4 +362,45 @@ export async function notifyOfferReviewed(messId: string, volunteerUserId: strin
       tag: "cook-offer",
     }));
   }
+}
+
+// ---------------------------------------------------------------- বাজারে লাগবে
+/** Khala asked for things: tell the managers and whoever has bazar duty today or tomorrow. */
+export async function notifyNeeds(messId: string, senderUserId: string, items: string[], note: string | null, voice: boolean) {
+  const admin = createAdminClient();
+  const today = todayDhaka();
+  const [{ data: managers }, { data: duty }, { data: cook }] = await Promise.all([
+    admin.from("mess_members").select("user_id").eq("mess_id", messId).eq("role", "manager").eq("status", "active"),
+    admin.from("bazar_roster").select("member:mess_members(user_id)").eq("mess_id", messId).in("date", [today, addDays(today, 1)]),
+    admin.from("mess_cooks").select("name").eq("mess_id", messId).eq("user_id", senderUserId).maybeSingle(),
+  ]);
+  const ids = [
+    ...(managers ?? []).map((x) => x.user_id as string | null),
+    ...((duty ?? []) as unknown as { member: { user_id: string | null } | null }[]).map((x) => x.member?.user_id ?? null),
+  ].filter((id) => id && id !== senderUserId);
+  await pushToUsers(ids, null, (t, { locale }) => {
+    const names = items.map((k) => t(`needs.items.${k}` as "needs.items.oil"));
+    const who = cook?.name ?? t("needs.someone");
+    return {
+      title: t("push.needsTitle", { who, items: names.length ? names.join(", ") : t("needs.something") }),
+      body: [note, voice ? t("push.needsVoice") : null].filter(Boolean).join(" · ") || t("push.needsBody"),
+      url: `/${locale}/bazar`,
+      tag: "needs",
+    };
+  });
+}
+
+/** Deletes voice messages older than VOICE_KEEP_DAYS (files and, for voice-only requests, the row). */
+export async function cleanupOldVoice() {
+  const { VOICE_KEEP_DAYS } = await import("@/lib/needs");
+  const admin = createAdminClient();
+  const before = new Date(Date.now() - VOICE_KEEP_DAYS * 864e5).toISOString();
+  const { data } = await admin.from("bazar_needs").select("id, item, note, voice_path").not("voice_path", "is", null).lt("created_at", before).limit(200);
+  if (!data?.length) return 0;
+  await admin.storage.from("voice").remove(data.map((r) => r.voice_path as string));
+  const voiceOnly = data.filter((r) => !r.item && !r.note).map((r) => r.id);
+  const keep = data.filter((r) => r.item || r.note).map((r) => r.id);
+  if (voiceOnly.length) await admin.from("bazar_needs").delete().in("id", voiceOnly);
+  if (keep.length) await admin.from("bazar_needs").update({ voice_path: null }).in("id", keep);
+  return data.length;
 }

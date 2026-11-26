@@ -341,6 +341,19 @@ ok('avatar: user can set own avatar_url', (await as(B, `select avatar_url from p
   ok('leave: full day turns lunch and dinner off', st.l === 0 && st.d === 0);
   await throws('leave: cannot be marked for past days', () => as(mgr, `select set_cook_leave($1, today_dhaka() - 1, today_dhaka() - 1, array['lunch'])`, [mess]), 'INVALID_RANGE');
   await db.query(`delete from cook_leaves where mess_id=$1`, [mess]);
+
+  // ---- বাজারে লাগবে (khala asks for things to buy)
+  ok('needs: khala asks for oil + salt + a line', (await as(K, `select add_bazar_needs($1, array['oil','salt'], 'মসলা শেষ') n`, [mess])).rows[0].n === 3);
+  ok('needs: the same item is not added twice while waiting', (await as(K, `select add_bazar_needs($1, array['oil']) n`, [mess])).rows[0].n === 0);
+  await throws('needs: members cannot add (only khala / manager)', () => as(member, `select add_bazar_needs($1, array['rice'])`, [mess]), 'FORBIDDEN');
+  await throws('needs: a stranger cannot add', () => as(E, `select add_bazar_needs($1, array['rice'])`, [mess]), 'FORBIDDEN');
+  await throws('needs: voice file must be in this mess\'s folder', () => as(K, `select add_bazar_needs($1, null, null, 'other-mess/x.webm')`, [mess]), 'FORBIDDEN');
+  ok('needs: every member sees the list', (await as(member, `select count(*)::int n from bazar_needs where status='open'`)).rows[0].n === 3);
+  const oil = (await db.query(`select id from bazar_needs where mess_id=$1 and item='oil'`, [mess])).rows[0].id;
+  await as(member, `select mark_need_bought($1)`, [oil]);
+  ok('needs: a member ticks "bought"', (await db.query(`select status from bazar_needs where id=$1`, [oil])).rows[0].status === 'bought');
+  ok('needs: oil can be asked for again after it was bought', (await as(K, `select add_bazar_needs($1, array['oil']) n`, [mess])).rows[0].n === 1);
+  await throws('needs: a stranger cannot tick it', () => as(E, `select mark_need_bought($1)`, [oil]), 'FORBIDDEN');
 }
 
 // ---- push subscriptions & server-only data

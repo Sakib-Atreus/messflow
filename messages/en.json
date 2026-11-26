@@ -491,7 +491,10 @@
     "offerApprovedTitle": "🍳 {name} will cook",
     "offerApprovedBody": "{name} will cook {meal} on {when}. Turn your meal on if you'll eat.",
     "offerRejectedTitle": "Offer to cook not accepted",
-    "offerRejectedBody": "{meal} on {when} stays off."
+    "offerRejectedBody": "{meal} on {when} stays off.",
+    "needsTitle": "🛒 {who}: {items}",
+    "needsBody": "Needed from the bazar.",
+    "needsVoice": "🎤 voice message"
   },
   "notify": {
     "title": "Notifications",
@@ -873,5 +876,48 @@
     "record": "Khala's leave this month",
     "noLeave": "No leave this month.",
     "next": "Khala on leave: {when}"
+  },
+  "needs": {
+    "title": "Need from bazar",
+    "khalaHelp": "Tap what's finished, then Send.",
+    "sentAlready": "Already sent - waiting to be bought",
+    "other": "Anything else? (optional)",
+    "otherPlaceholder": "e.g. green chili, coriander",
+    "send": "Send",
+    "sent": "Sent! The manager and bazar duty were told.",
+    "pick": "Tap an item, write something or record a voice message.",
+    "record": "Record voice",
+    "recording": "Recording… tap to stop",
+    "recordAgain": "Record again",
+    "deleteVoice": "Delete voice",
+    "voiceNote": "Voice message",
+    "micBlocked": "Microphone not allowed. Allow it in the browser settings.",
+    "micUnsupported": "This phone can't record here.",
+    "uploadFailed": "Couldn't upload the voice message. Try again.",
+    "listTitle": "Need from bazar",
+    "listHelp": "Khala asked for these. Tap \"Bought\" after buying.",
+    "bought": "Bought",
+    "boughtDone": "Marked as bought.",
+    "someone": "Someone",
+    "something": "something",
+    "voiceExpires": "Voice messages are kept for 30 days.",
+    "items": {
+      "oil": "Oil",
+      "salt": "Salt",
+      "onion": "Onion",
+      "chili": "Chili",
+      "turmeric": "Turmeric",
+      "garlic": "Garlic",
+      "ginger": "Ginger",
+      "spices": "Spices",
+      "rice": "Rice",
+      "dal": "Lentils",
+      "potato": "Potatoes",
+      "egg": "Eggs",
+      "sugar": "Sugar",
+      "tea": "Tea leaves",
+      "soap": "Dish soap",
+      "gas": "Gas finished"
+    }
   }
 }

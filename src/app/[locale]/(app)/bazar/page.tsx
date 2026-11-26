@@ -7,6 +7,7 @@ import { MonthNav, parseMonth } from "@/components/month-nav";
 import { btn, Card, Empty, Field, inputClass, PageTitle, Stat } from "@/components/ui";
 import { addBazar } from "@/lib/actions/mess";
 import { getContext } from "@/lib/mess";
+import { NeedsList } from "@/components/needs-list";
 import { monthEnd, todayDhaka } from "@/lib/dates";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { getMembers } from "@/lib/queries";
@@ -47,6 +48,8 @@ export default async function BazarPage({
     <div className="space-y-5">
       <PageTitle action={<MonthNav path="/bazar" month={month} />}>{t("bazar.title")}</PageTitle>
       <Stat label={`${t("common.total")} · ${t("bazar.thisMonth")}`} value={fmtMoney(locale, total)} />
+
+      <NeedsList supabase={supabase} messId={mess.id} locale={locale} />
 
       {isStaff && (
         <Card title={t("bazar.add")}>

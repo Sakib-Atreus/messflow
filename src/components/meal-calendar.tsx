@@ -77,7 +77,7 @@ export function MealCalendar({ memberId, days, kinds, weekdays }: { memberId: st
                       aria-label={`${t(`meal.${k}`)} ${d.date}`}
                       title={t(`meal.${k}`)}
                       className={cn(
-                        "grid h-6 min-w-6 flex-1 place-items-center rounded-md text-[10px] font-bold transition sm:h-7",
+                        "grid h-8 min-w-6 flex-1 place-items-center rounded-md text-xs font-bold transition sm:h-7 sm:text-[10px]",
                         m?.on ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-400 dark:bg-slate-800",
                         locked && "cursor-default opacity-50",
                         busy === `${d.date}${k}` && "animate-pulse",

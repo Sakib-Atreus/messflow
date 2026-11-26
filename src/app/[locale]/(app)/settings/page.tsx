@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, Checkbox, Field, inputClass, PageTitle } from "@/components/ui";
 import { BellRing, Calculator, UserPlus } from "lucide-react";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtNumber } from "@/lib/format";
 import { updateMessSettings } from "@/lib/actions/mess";
 import { getContext } from "@/lib/mess";
 import { intervalToMinutes } from "@/lib/dates";
@@ -112,7 +112,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
                 <select name="cutoff_reminder_min" defaultValue={mess.cutoff_reminder_min === null ? "off" : String(mess.cutoff_reminder_min)} className={inputClass}>
                   <option value="off">{t("settings.off")}</option>
                   {[30, 45, 60].map((m) => (
-                    <option key={m} value={m}>{t("settings.minutesBefore", { n: m })}</option>
+                    <option key={m} value={m}>{t("settings.minutesBefore", { n: fmtNumber(locale, m) })}</option>
                   ))}
                 </select>
               </Field>

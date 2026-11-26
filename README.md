@@ -94,6 +94,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Approval-based sign up: managers approve join requests
 - Managers create members with temporary passwords, which members change at first login
 - Cook (khala) login: one view-only kitchen page with today's meal counts and menu. Not a member, so no meals or bills
+- "Need from bazar": khala taps finished items (oil, salt, onion…), adds a line or a voice message; the manager and bazar duty get a notification and everyone sees the list on the Bazar page
 - Khala's leave: the manager marks a meal or full day, it goes off for everyone, and a member can offer "I'll cook" for the manager to approve
 - Custom roles with per-area permissions (for example a *Cashier* who handles deposits only)
 - Per-mess settings: cutoffs, meal-rate rounding, warning days, reminder times, new-member defaults

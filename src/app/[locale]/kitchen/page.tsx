@@ -12,6 +12,7 @@ import { todayDhaka } from "@/lib/dates";
 import { fmtDate, fmtNumber, fmtTime } from "@/lib/format";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
+import { NeedsPanel } from "@/components/needs-panel";
 
 type Kitchen = {
   mess: string;
@@ -35,6 +36,13 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
   const { data, error } = await supabase.rpc("kitchen_day", { p_mess: cook.mess_id, p_date: today });
   if (error) throw new Error(`Could not load the kitchen: ${error.message}`);
   const k = data as Kitchen;
+  // items khala already asked for that nobody has bought yet (shown with ⏳ on her buttons)
+  const { data: open } = await supabase
+    .from("bazar_needs")
+    .select("item")
+    .eq("mess_id", cook.mess_id)
+    .eq("status", "open")
+    .not("item", "is", null);
   const kinds: MealKind[] = k.breakfast_enabled ? ["breakfast", "lunch", "dinner"] : ["lunch", "dinner"];
   const now = Date.now();
   // cutoff = 00:00 of the day in Dhaka (UTC+6) + minutes
@@ -120,6 +128,8 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
             </section>
           );
         })}
+
+        <NeedsPanel messId={cook.mess_id} pending={(open ?? []).map((x) => x.item as string)} />
       </main>
     </div>
   );

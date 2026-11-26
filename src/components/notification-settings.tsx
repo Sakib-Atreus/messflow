@@ -107,10 +107,10 @@ export function NotificationSettings({ vapidKey, prefs: initial, compact }: { va
         <div className="mb-2 text-sm font-medium">{t("types")}</div>
         <div className="grid gap-2 sm:grid-cols-2">
           {KINDS.map((k) => (
-            <label key={k} className="inline-flex items-center gap-2">
+            <label key={k} className="inline-flex min-h-10 items-center gap-3 rounded-lg pr-2 select-none">
               <input
                 type="checkbox"
-                className="size-4 accent-brand-600"
+                className="size-5 accent-brand-600"
                 checked={prefs[k] !== false}
                 onChange={(e) => toggle(k, e.target.checked)}
               />
