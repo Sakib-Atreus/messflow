@@ -258,7 +258,29 @@ supabase/migrations/      Schema, RLS policies, Postgres functions, cron jobs
 | `pnpm db:migrate` | Apply new migrations to the database in `DATABASE_URL` |
 | `pnpm admin:create` | Create or promote the super admin |
 | `pnpm db:migrate:prod` / `pnpm admin:create:prod` | Same, using `.env.production.local` (your live project) |
+| `pnpm db:backup` / `pnpm db:backup:dev` | Full data backup of the live / development database into `backups/` (read-only) |
+| `pnpm db:restore:prod <file>` / `pnpm db:restore <file>` | Load a backup into a **fresh** project (refuses if it already has data) |
 | `pnpm db:reset-data` | Delete all mess data, keeping the super admin (asks for confirmation) |
+
+## Backups
+
+The free Supabase plan has no backups you can restore, so take your own:
+
+```bash
+pnpm db:backup        # live project → backups/messflow-live-YYYY-MM-DD_HHMM.sql
+```
+
+- It copies **all data**: every mess, member, meal, bazar, deposit, bill and month, plus the logins (people keep their passwords after a restore). It only reads; it never changes the database.
+- Run it **once a week or at least at every month close**, and keep the file somewhere safe, such as a private Google Drive folder. The `backups/` folder is git-ignored: the files contain personal data and password hashes, so never share them.
+- Needs `pg_dump` / `psql` 17 or newer (Mac: `brew install libpq && brew link --force libpq`).
+- Not included: profile photos and voice messages (files in Supabase Storage), login sessions (people just log in again).
+
+**Restore** (only if the live project is lost or damaged):
+
+1. Create a **new** Supabase project and put its Session pooler URI in `DATABASE_URL` in `.env.production.local`.
+2. `pnpm db:migrate:prod`: builds the empty tables.
+3. `pnpm db:restore:prod backups/messflow-live-….sql` and type `RESTORE`. It loads everything in one go, or nothing if anything fails, and refuses to run on a database that already has data.
+4. Point Vercel's environment variables at the new project, then redo *Connect the two* above (URL configuration and `private.config`).
 
 ## Testing
 
