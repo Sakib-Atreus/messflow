@@ -67,6 +67,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Daily meals created automatically from each member's default meals (breakfast, lunch, dinner)
 - Members turn meals on or off before a configurable cutoff; managers can change anything
 - Half meals and guest meals, with a month calendar view
+- Daily menu ("what to cook") written by the manager and shown to everyone
 
 **Money**
 - Bazar entries, with the meal rate calculated from bazar only
@@ -92,6 +93,8 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Super admin panel: approve new messes, create managers, see every mess and user
 - Approval-based sign up: managers approve join requests
 - Managers create members with temporary passwords, which members change at first login
+- Cook (khala) login: one view-only kitchen page with today's meal counts and menu. Not a member, so no meals or bills
+- Khala's leave: the manager marks a meal or full day, it goes off for everyone, and a member can offer "I'll cook" for the manager to approve
 - Custom roles with per-area permissions (for example a *Cashier* who handles deposits only)
 - Per-mess settings: cutoffs, meal-rate rounding, warning days, reminder times, new-member defaults
 

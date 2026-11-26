@@ -11,6 +11,7 @@ import { addMember, createMemberLogin, reviewJoinRequest, setMemberBills, update
 import { BillChoices, type BillOption } from "@/components/bill-choices";
 import { RowPanels } from "@/components/row-panels";
 import { Drawer } from "@/components/drawer";
+import { CookCard } from "@/components/cook-card";
 import { ListSearch } from "@/components/list-search";
 import { createAdminClient } from "@/lib/supabase/server";
 import { displayLogin, tempPassword } from "@/lib/login-id";
@@ -413,6 +414,8 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
           </details>
         )}
       </Card>
+
+      {isManager && <CookCard supabase={supabase} messId={mess.id} />}
 
       {can("settings") && (
         <Card title={t("members.inviteTitle")} icon={Link2}>

@@ -29,7 +29,7 @@ export function ActionForm({
   const t = useTranslations();
   const [state, formAction, pending] = useActionState(action, {} as ActionResult);
   // Submit by hand instead of <form action>: React would otherwise clear every field after each
-  // submit — even when the server says "error", so people would have to retype everything.
+  // submit - even when the server says "error", so people would have to retype everything.
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);

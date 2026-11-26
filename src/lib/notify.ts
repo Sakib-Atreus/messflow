@@ -5,7 +5,7 @@ import { addDays, cutoffTime, dhakaMinutes, intervalToMinutes, monthEnd, monthSt
 import { mealWallet } from "@/lib/meal-wallet";
 import { fmtDate, fmtMoney, fmtTime } from "@/lib/format";
 import { activeOn, effectiveMeal, getMonthSummary, mealKinds, weightedMeals } from "@/lib/queries";
-import { pushEnabled, pushToUsers } from "@/lib/push";
+import { pushEnabled, pushToUsers, type T } from "@/lib/push";
 import type { Meal, Member, Mess, PaymentMethod, Permission } from "@/lib/types";
 
 // Reminder timing comes from each mess's Settings (cutoff lead, duty time, dues day/time).
@@ -296,4 +296,69 @@ export async function notifySwap(otherMemberId: string, swapperName: string, new
     url: `/${locale}/roster`,
     tag: "duty-swap",
   }));
+}
+
+// ---------------------------------------------------------------- khala's leave
+type Kind = "breakfast" | "lunch" | "dinner";
+
+async function activeUserIds(messId: string, except?: string) {
+  const admin = createAdminClient();
+  const { data } = await admin.from("mess_members").select("user_id").eq("mess_id", messId).eq("status", "active");
+  return (data ?? []).map((x) => x.user_id as string | null).filter((id) => id && id !== except);
+}
+const mealNames = (t: T, meals: Kind[]) => meals.map((k) => t(`meal.${k}`)).join(", ");
+const longDate = (locale: string, d: string) => fmtDate(locale, d, { weekday: "long", day: "numeric", month: "long" });
+
+/** Manager marked khala's leave: those meals are off for everyone. */
+export async function notifyCookLeave(messId: string, authorUserId: string, from: string, to: string, meals: Kind[]) {
+  await pushToUsers(await activeUserIds(messId, authorUserId), "notices", (t, { locale }) => ({
+    title: t("push.leaveTitle"),
+    body: t("push.leaveBody", {
+      meals: mealNames(t, meals),
+      when: from === to ? longDate(locale, from) : `${longDate(locale, from)} - ${longDate(locale, to)}`,
+    }),
+    url: `/${locale}/meals`,
+    tag: `leave-${from}`,
+  }));
+}
+
+/** Khala is coming after all: that meal is back to everyone's normal meals. */
+export async function notifyLeaveCancelled(messId: string, authorUserId: string, date: string, meal: Kind) {
+  await pushToUsers(await activeUserIds(messId, authorUserId), "notices", (t, { locale }) => ({
+    title: t("push.leaveCancelTitle"),
+    body: t("push.leaveCancelBody", { meal: t(`meal.${meal}`), when: longDate(locale, date) }),
+    url: `/${locale}/meals`,
+    tag: `leave-${date}`,
+  }));
+}
+
+/** A member offered to cook on a leave day: tell the managers. */
+export async function notifyCookOffer(messId: string, name: string, date: string, meal: Kind) {
+  const admin = createAdminClient();
+  const { data } = await admin.from("mess_members").select("user_id").eq("mess_id", messId).eq("role", "manager").eq("status", "active");
+  await pushToUsers((data ?? []).map((x) => x.user_id), null, (t, { locale }) => ({
+    title: t("push.offerTitle", { name }),
+    body: t("push.offerBody", { name, meal: t(`meal.${meal}`), when: longDate(locale, date) }),
+    url: `/${locale}/meals`,
+    tag: "cook-offer",
+  }));
+}
+
+/** Manager answered an "I'll cook" offer. Approved: everyone may eat again. Rejected: tell the volunteer. */
+export async function notifyOfferReviewed(messId: string, volunteerUserId: string | null, name: string, approved: boolean, date: string, meal: Kind) {
+  if (approved) {
+    await pushToUsers(await activeUserIds(messId), "notices", (t, { locale }) => ({
+      title: t("push.offerApprovedTitle", { name }),
+      body: t("push.offerApprovedBody", { name, meal: t(`meal.${meal}`), when: longDate(locale, date) }),
+      url: `/${locale}/meals`,
+      tag: `leave-${date}`,
+    }));
+  } else {
+    await pushToUsers([volunteerUserId], null, (t, { locale }) => ({
+      title: t("push.offerRejectedTitle"),
+      body: t("push.offerRejectedBody", { meal: t(`meal.${meal}`), when: longDate(locale, date) }),
+      url: `/${locale}/meals`,
+      tag: "cook-offer",
+    }));
+  }
 }

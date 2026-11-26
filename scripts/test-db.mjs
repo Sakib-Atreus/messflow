@@ -287,6 +287,62 @@ ok('avatar: user can set own avatar_url', (await as(B, `select avatar_url from p
   ok('inbox: can mark own as read', (await as(B, `select count(*)::int n from notifications where read_at is not null`)).rows[0].n === 1);
 }
 
+// ---- cook (khala) login + daily menu
+{
+  const K = '00000000-0000-0000-0000-0000000000c0', E = '00000000-0000-0000-0000-0000000000e0';
+  await db.exec(`insert into auth.users (id, raw_user_meta_data) values ('${K}','{"full_name":"Khala"}'),('${E}','{"full_name":"Stranger"}')`);
+  await db.query(`insert into mess_cooks (mess_id, user_id, name) values ($1, $2, 'Khala')`, [mess, K]);
+  const mgr = (await db.query(`select user_id from mess_members where mess_id=$1 and role='manager' and user_id is not null limit 1`, [mess])).rows[0].user_id;
+  const member = (await db.query(`select user_id from mess_members where mess_id=$1 and role='member' and user_id is not null limit 1`, [mess])).rows[0].user_id;
+  const want = (await db.query(`select coalesce(sum(case when lunch then (case when half_lunch then 0.5 else 1 end) else 0 end + guest_lunch),0)::float n
+    from meals ml join mess_members mm on mm.id = ml.member_id
+    where ml.mess_id=$1 and ml.date = today_dhaka() and mm.joined_on <= today_dhaka() and (mm.left_on is null or mm.left_on >= today_dhaka())`, [mess])).rows[0].n;
+  const k = (await as(K, `select kitchen_day($1) k`, [mess])).rows[0].k;
+  ok('cook: kitchen_day lunch count matches the meals', Number(k.lunch) === want, `${k.lunch} vs ${want}`);
+  ok('cook: sees no member rows, meals, deposits or summary', (await as(K, `select (select count(*) from mess_members)+(select count(*) from meals)+(select count(*) from deposits) n`)).rows[0].n == 0);
+  await throws('cook: cannot read the money summary', () => as(K, `select month_summary($1, today_dhaka())`, [mess]), 'FORBIDDEN');
+  await throws('stranger: cannot read kitchen numbers', () => as(E, `select kitchen_day($1)`, [mess]), 'FORBIDDEN');
+  await as(mgr, `insert into meal_menus (mess_id, date, lunch, dinner) values ($1, today_dhaka(), 'Rice, chicken, dal', 'Rice, fish')`, [mess]);
+  ok('menu: cook sees the manager\'s menu', (await as(K, `select kitchen_day($1) k`, [mess])).rows[0].k.menu.lunch === 'Rice, chicken, dal');
+  await as(mgr, `update meal_menus set note = 'আজ ৫ জন বেশি, ভাত বেশি রাঁধবেন' where mess_id = $1 and date = today_dhaka()`, [mess]);
+  ok('menu: cook sees the manager\'s message', (await as(K, `select kitchen_day($1) k`, [mess])).rows[0].k.menu.note === 'আজ ৫ জন বেশি, ভাত বেশি রাঁধবেন');
+  ok('menu: members can read it', (await as(member, `select count(*)::int n from meal_menus where mess_id=$1`, [mess])).rows[0].n === 1);
+  await throws('menu: members cannot write it', () => as(member, `insert into meal_menus (mess_id, date, lunch) values ($1, today_dhaka() + 1, 'x')`, [mess]), 'row-level security');
+  await throws('menu: cook cannot write it', () => as(K, `insert into meal_menus (mess_id, date, lunch) values ($1, today_dhaka() + 1, 'x')`, [mess]), 'row-level security');
+  ok('cooks list: manager sees it, members do not', (await as(mgr, `select count(*)::int n from mess_cooks`)).rows[0].n === 1 && (await as(member, `select count(*)::int n from mess_cooks`)).rows[0].n === 0);
+
+  // ---- khala's leave (tomorrow, so no cutoff gets in the way)
+  const tmr = (await db.query(`select (today_dhaka() + 1)::text d`)).rows[0].d;
+  const myId = (await db.query(`select id from mess_members where mess_id=$1 and user_id=$2`, [mess, member])).rows[0].id;
+  await throws('leave: members cannot mark it', () => as(member, `select set_cook_leave($1, $2::date, $2::date, array['lunch'])`, [mess, tmr]), 'FORBIDDEN');
+  await as(mgr, `update mess_members set default_lunch = true, default_dinner = true where mess_id = $1`, [mess]);
+  ok('leave: manager marks lunch', (await as(mgr, `select set_cook_leave($1, $2::date, $2::date, array['lunch']) n`, [mess, tmr])).rows[0].n === 1);
+  const lunchOn = async () => (await db.query(`select count(*) filter (where lunch)::int l, count(*) filter (where dinner)::int d, count(*)::int n from meals where mess_id=$1 and date=$2`, [mess, tmr])).rows[0];
+  let st = await lunchOn();
+  ok('leave: lunch off for everyone, dinner untouched', st.l === 0 && st.d === st.n && st.n >= 2, JSON.stringify(st));
+  ok('leave: cook sees it on the kitchen page', (await as(K, `select kitchen_day($1, $2::date) k`, [mess, tmr])).rows[0].k.leave.lunch === true);
+  await throws('leave: member cannot turn lunch back on', () => as(member, `select set_meal($1, $2::date, p_lunch => true)`, [myId, tmr]), 'COOK_LEAVE');
+  await throws('leave: member cannot add a lunch guest', () => as(member, `select set_meal($1, $2::date, p_guest_lunch => 1)`, [myId, tmr]), 'COOK_LEAVE');
+  await as(member, `select set_meal($1, $2::date, p_dinner => false)`, [myId, tmr]);
+  ok('leave: other meals still change normally', (await db.query(`select dinner from meals where member_id=$1 and date=$2`, [myId, tmr])).rows[0].dinner === false);
+  const leaveId = (await db.query(`select id from cook_leaves where mess_id=$1 and date=$2`, [mess, tmr])).rows[0].id;
+  const vol = (await as(member, `select volunteer_to_cook($1) id`, [leaveId])).rows[0].id;
+  await throws('leave: member cannot approve themselves', () => as(member, `select review_cook_volunteer($1, true)`, [vol]), 'FORBIDDEN');
+  await as(mgr, `select review_cook_volunteer($1, true)`, [vol]);
+  ok('leave: approved cook gets their lunch on', (await db.query(`select lunch from meals where member_id=$1 and date=$2`, [myId, tmr])).rows[0].lunch === true);
+  await as(member, `select set_meal($1, $2::date, p_lunch => false)`, [myId, tmr]);
+  await as(member, `select set_meal($1, $2::date, p_lunch => true, p_guest_lunch => 1)`, [myId, tmr]);
+  ok('leave: once someone is approved to cook, members can turn lunch (and guests) on again', (await db.query(`select lunch, guest_lunch g from meals where member_id=$1 and date=$2`, [myId, tmr])).rows[0].g === 1);
+  await as(mgr, `select cancel_cook_leave($1)`, [leaveId]);
+  st = await lunchOn();
+  ok('leave: cancel puts everyone back on their default meals', st.l === st.n && (await db.query(`select count(*)::int n from cook_volunteers`)).rows[0].n === 0, JSON.stringify(st));
+  await as(mgr, `select set_cook_leave($1, $2::date, $2::date, array['lunch','dinner'])`, [mess, tmr]);
+  st = await lunchOn();
+  ok('leave: full day turns lunch and dinner off', st.l === 0 && st.d === 0);
+  await throws('leave: cannot be marked for past days', () => as(mgr, `select set_cook_leave($1, today_dhaka() - 1, today_dhaka() - 1, array['lunch'])`, [mess]), 'INVALID_RANGE');
+  await db.query(`delete from cook_leaves where mess_id=$1`, [mess]);
+}
+
 // ---- push subscriptions & server-only data
 await as(B, `insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://push/b', 'k', 'a')`, [B]);
 await throws('cannot subscribe as someone else', () => as(B, `insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://push/x', 'k', 'a')`, [A]), 'row-level security');

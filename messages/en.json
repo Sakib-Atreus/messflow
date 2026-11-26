@@ -400,7 +400,8 @@
     "DUPLICATE": "That name is already used.",
     "INVALID_EMAIL": "Please enter a valid email address.",
     "SAME_EMAIL": "That's already your email.",
-    "WRONG_PASSWORD": "Current password is wrong."
+    "WRONG_PASSWORD": "Current password is wrong.",
+    "COOK_LEAVE": "Khala is on leave for this meal and nobody is cooking yet. Tap \"I'll cook\" if you will."
   },
   "roster": {
     "title": "Bazar duty",
@@ -480,7 +481,17 @@
     "mealLowMgrTitle": "🍛 {name}: meal money almost finished",
     "mealLowMgrBody": "About {days} days left - should pay about {pay}.",
     "mealOutMgrTitle": "🍛 {name}: meal money finished",
-    "mealOutMgrBody": "{name} is {owe} short - should pay about {pay}."
+    "mealOutMgrBody": "{name} is {owe} short - should pay about {pay}.",
+    "leaveTitle": "🍳 Khala on leave",
+    "leaveBody": "{meals} off for everyone on {when}. If you'll cook, tap \"I'll cook\" in the app.",
+    "leaveCancelTitle": "🍳 Khala is coming",
+    "leaveCancelBody": "{meal} on {when} is back to normal.",
+    "offerTitle": "🙋 {name} will cook",
+    "offerBody": "{name} offered to cook {meal} on {when}. Approve it on the Meals page.",
+    "offerApprovedTitle": "🍳 {name} will cook",
+    "offerApprovedBody": "{name} will cook {meal} on {when}. Turn your meal on if you'll eat.",
+    "offerRejectedTitle": "Offer to cook not accepted",
+    "offerRejectedBody": "{meal} on {when} stays off."
   },
   "notify": {
     "title": "Notifications",
@@ -607,7 +618,8 @@
     "deposits": "{count, plural, one {# deposit to approve} other {# deposits to approve}}",
     "messRequests": "{count, plural, one {# new mess request} other {# new mess requests}}",
     "recent": "Recent notifications",
-    "noNotifications": "No notifications yet."
+    "noNotifications": "No notifications yet.",
+    "cookOffers": "{count, plural, one {# offer to cook} other {# offers to cook}}"
   },
   "charts": {
     "avgPerDay": "≈ {n} per day",
@@ -803,5 +815,63 @@
     "step_bills": "Add this month's rent and bills",
     "step_duty": "Plan bazar duty (weekly schedule)",
     "step_notify": "Turn on notifications on your phone"
+  },
+  "cook": {
+    "title": "Cook / Khala",
+    "help": "A login for the cook. They only see one page: how many meals to cook today and what to cook. They are not a member: no meals, bills or balance, and they can't change anything.",
+    "add": "Add cook login",
+    "name": "Name",
+    "namePlaceholder": "Rina Khala",
+    "create": "Create cook login",
+    "remove": "Remove",
+    "removeConfirm": "Remove {name}? Their login stops working.",
+    "loginCreated": "Cook login ready - share these (they set their own password on first login):"
+  },
+  "menu": {
+    "title": "What to cook",
+    "placeholder": "e.g. Rice, chicken, dal",
+    "help": "Everyone in the mess and the cook see this. Common dishes (rice, dal, chicken, fish…) show in Bangla or English for each person automatically.",
+    "save": "Save menu",
+    "saved": "Menu saved - everyone can see it now.",
+    "notSet": "The manager hasn't written the menu for this day yet.",
+    "note": "Message for khala (optional)",
+    "noteHint": "Only khala sees this, at the top of her page. Write in Bangla so she can read it easily.",
+    "notePlaceholder": "e.g. আজ রাতে ২ জন গেস্ট আসবে, ভাত একটু বেশি রাঁধবেন"
+  },
+  "kitchen": {
+    "title": "Today's cooking",
+    "meals": "meals",
+    "cook": "Cook",
+    "final": "Final - won't change",
+    "mayChange": "May change until {time}",
+    "leave": "Leave - no cooking",
+    "message": "A note for you, khala"
+  },
+  "leave": {
+    "title": "Khala's leave",
+    "from": "From",
+    "to": "To",
+    "toHint": "Leave empty for one day",
+    "help": "Ticked meals go off for everyone on these days. If someone will cook, they tap \"I'll cook\" and you approve it.",
+    "mark": "Mark leave",
+    "marked": "Leave marked - those meals are off and everyone was told.",
+    "cancel": "Khala is coming",
+    "cancelConfirm": "Khala is coming after all? This meal goes back to everyone's normal meals.",
+    "cancelled": "Leave cancelled - meals are back to normal.",
+    "fullDay": "full day",
+    "mealOff": "khala on leave, meal off for everyone",
+    "mealOffShort": "Meal off",
+    "willCook": "{names} will cook - turn your meal on if you'll eat",
+    "offer": "{name} offered to cook",
+    "offerSent": "Thanks! The manager will confirm.",
+    "offerApproved": "Approved - everyone can turn this meal on again.",
+    "offerRejected": "Offer declined.",
+    "bannerTitle": "Khala on leave",
+    "illCook": "I'll cook",
+    "waiting": "Waiting for the manager",
+    "notAccepted": "Not accepted",
+    "record": "Khala's leave this month",
+    "noLeave": "No leave this month.",
+    "next": "Khala on leave: {when}"
   }
 }

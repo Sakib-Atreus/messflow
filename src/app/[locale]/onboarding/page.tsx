@@ -9,7 +9,7 @@ import { DEFAULT_PREFS } from "@/lib/push";
 import { Alert, btn, Card, Field, inputClass } from "@/components/ui";
 import { joinMess, requestMess } from "@/lib/actions/mess";
 import { signOut } from "@/lib/actions/auth";
-import { requireUser } from "@/lib/mess";
+import { getCook, requireUser } from "@/lib/mess";
 import { createAdminClient } from "@/lib/supabase/server";
 
 type Req = { id: string; status: string; created_at: string };
@@ -26,6 +26,7 @@ export default async function OnboardingPage({
   setRequestLocale(locale);
   const { supabase, user, profile, isSuperAdmin } = await requireUser();
   if (isSuperAdmin) redirect({ href: "/admin", locale });
+  if (await getCook()) redirect({ href: "/kitchen", locale });
   const { count } = await supabase.from("mess_members").select("id", { count: "exact", head: true }).eq("user_id", user.id);
   if (count) redirect({ href: "/dashboard", locale });
 

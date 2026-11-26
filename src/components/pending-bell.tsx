@@ -9,7 +9,7 @@ import { Bell, CheckCircle2, ChevronRight } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { CountBadge } from "./nav";
 
-type Item = { href: string; key: "joins" | "deposits" | "messRequests"; count: number };
+type Item = { href: string; key: "joins" | "deposits" | "messRequests" | "cookOffers"; count: number };
 export type InboxItem = { id: string; title: string; body: string | null; url: string | null; created_at: string; read_at: string | null };
 
 /** "5 min ago", "2 days ago" in the page language */
@@ -87,9 +87,17 @@ export function PendingBell({ items, inbox = [] }: { items: Item[]; inbox?: Inbo
         <Bell className="size-[18px]" />
         <CountBadge n={total} className="absolute -right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px] ring-2 ring-white dark:ring-slate-900" />
       </summary>
-      <div className="absolute right-0 z-30 mt-2 max-h-[75vh] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold dark:border-slate-800">{t("title")}</div>
-        {waiting === 0 ? (
+      {/* phones: dim the page behind; tapping it closes the panel */}
+      <div
+        aria-hidden
+        className="fixed inset-x-0 top-0 z-20 h-dvh bg-slate-900/25 sm:hidden"
+        onClick={() => ref.current && (ref.current.open = false)}
+      />
+      {/* phones: full width under the header (the bell isn't at the screen edge); larger screens: dropdown under the bell */}
+      <div className="fixed inset-x-3 top-[4.5rem] z-30 max-h-[calc(100dvh-10rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-[75vh] sm:w-96 dark:border-slate-700 dark:bg-slate-900">
+        <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-4 py-3 text-sm font-semibold dark:border-slate-800 dark:bg-slate-900">{t("title")}</div>
+        {/* things waiting for approval: only for people who approve something (managers, cashiers…) */}
+        {items.length === 0 ? null : waiting === 0 ? (
           <div className="flex items-center gap-2 px-4 py-5 text-sm text-slate-500">
             <CheckCircle2 className="size-5 text-brand-600" /> {t("allClear")}
           </div>
@@ -114,9 +122,11 @@ export function PendingBell({ items, inbox = [] }: { items: Item[]; inbox?: Inbo
         )}
 
         {/* recent notifications */}
-        <div className="border-y border-slate-100 bg-slate-50/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/40">
-          {t("recent")}
-        </div>
+        {items.length > 0 && (
+          <div className="border-y border-slate-100 bg-slate-50/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/40">
+            {t("recent")}
+          </div>
+        )}
         {inbox.length === 0 ? (
           <div className="px-4 py-5 text-sm text-slate-500">{t("noNotifications")}</div>
         ) : (
@@ -132,7 +142,7 @@ export function PendingBell({ items, inbox = [] }: { items: Item[]; inbox?: Inbo
                   <span className="min-w-0 flex-1">
                     <span className={cn("block", !n.read_at && "font-semibold")}>{n.title}</span>
                     {n.body && <span className="line-clamp-2 block text-slate-500 dark:text-slate-400">{n.body}</span>}
-                    <span className="mt-0.5 block text-xs text-slate-400">{ago(n.created_at, locale)}</span>
+                    <span className="mt-0.5 block text-xs text-slate-400" suppressHydrationWarning>{ago(n.created_at, locale)}</span>
                   </span>
                 </NextLink>
               </li>

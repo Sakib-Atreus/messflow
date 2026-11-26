@@ -1,9 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChefHat, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { GuestPanel, GuestStepper, HalfToggle, MealToggle } from "@/components/meal-toggle";
 import { MealCalendar, type CalendarDay } from "@/components/meal-calendar";
+import { MenuCard, type Menu } from "@/components/menu-card";
+import { LeaveBanner } from "@/components/leave-banner";
+import { LeavePanel } from "@/components/leave-panel";
+import { Drawer } from "@/components/drawer";
+import { closedByLeave, getLeaves } from "@/lib/leave";
 import { btn, Card, Checkbox, Field, inputClass, PageTitle } from "@/components/ui";
 import { setMealRange, updateMyDefaults } from "@/lib/actions/mess";
 import { getContext } from "@/lib/mess";
@@ -22,23 +27,31 @@ export default async function MealsPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const sp = await searchParams;
-  const { supabase, mess, me, can, isVirtual } = await getContext();
+  const { supabase, mess, me, can, isVirtual, isManager } = await getContext();
   const isStaff = can("meals");
   const t = await getTranslations();
   const today = todayDhaka();
   const day = isValidDate(sp.date) ? sp.date : today;
   const kinds = mealKinds(mess);
-  const locked = (date: string, k: (typeof kinds)[number]) => !isStaff && isPastCutoff(date, mess[`${k}_cutoff`]);
   // calendar month (?cal=YYYY-MM), Saturday-first weeks like the bazar roster
   const calMonth = sp.cal && /^\d{4}-\d{2}$/.test(sp.cal) ? `${sp.cal}-01` : monthStart(today);
   const calEnd = monthEnd(calMonth);
+  // khala's leave: this month so far, the next month ahead, the calendar month and the chosen day
+  const leaveFrom = [monthStart(today), calMonth, day].sort()[0];
+  const leaveTo = [addDays(today, 31), calEnd, day].sort()[2];
+  const leaves = await getLeaves(supabase, mess.id, leaveFrom, leaveTo);
+  const closed = closedByLeave(leaves);
+  const upcoming = leaves.filter((l) => l.date >= today);
+  const pendingOffers = upcoming.reduce((n, l) => n + l.offers.filter((o) => o.status === "pending").length, 0);
+  const locked = (date: string, k: (typeof kinds)[number]) => !isStaff && (isPastCutoff(date, mess[`${k}_cutoff`]) || closed(date, k));
   const gridStart = addDays(calMonth, -((new Date(`${calMonth}T00:00:00Z`).getUTCDay() + 1) % 7));
   const gridEnd = addDays(calEnd, (5 - new Date(`${calEnd}T00:00:00Z`).getUTCDay() + 7) % 7);
 
-  const [members, dayMeals, myMonth] = await Promise.all([
+  const [members, dayMeals, myMonth, { data: menu }] = await Promise.all([
     getMembers(supabase, mess.id),
     getMealsBetween(supabase, mess.id, day, day),
     supabase.from("meals").select("*").eq("member_id", me.id).gte("date", calMonth).lte("date", calEnd),
+    supabase.from("meal_menus").select("breakfast, lunch, dinner, note").eq("mess_id", mess.id).eq("date", day).maybeSingle(),
   ]);
   const weekdays = [6, 0, 1, 2, 3, 4, 5].map((d) => fmtDate(locale, `2026-11-${22 + d}`, { weekday: "short" }));
   const calendarDays: CalendarDay[] = [];
@@ -68,6 +81,45 @@ export default async function MealsPage({
       <p className="text-sm text-slate-500">
         {kinds.map((k) => `${t(`meal.${k}`)}: ${t("meals.cutoff", { time: fmtTime(locale, intervalToMinutes(mess[`${k}_cutoff`])) })}`).join(" · ")}
       </p>
+
+      <MenuCard
+        date={day}
+        dateLabel={dayLabel || fmtDate(locale, day, { weekday: "short", day: "numeric", month: "short" })}
+        kinds={kinds}
+        menu={menu as Menu}
+        canEdit={isManager}
+        action={
+          isManager && (
+            <Drawer
+              label={t("leave.title")}
+              title={t("leave.title")}
+              icon="chef"
+              side={false}
+              className={btn.small}
+              badge={pendingOffers}
+            >
+              <LeavePanel upcoming={upcoming} past={leaves.filter((l) => l.date >= monthStart(today) && l.date < today)} kinds={kinds} locale={locale} />
+            </Drawer>
+          )
+        }
+        footer={
+          isManager && upcoming.length > 0 && (
+            <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              <ChefHat className="size-4 shrink-0" />
+              {t("leave.next", { when: `${fmtDate(locale, upcoming[0].date, { weekday: "short", day: "numeric", month: "short" })} · ${upcoming.filter((l) => l.date === upcoming[0].date).map((l) => t(`meal.${l.meal}`)).join(", ")}` })}
+              {pendingOffers > 0 && <span className="font-semibold">· {t("pending.cookOffers", { count: pendingOffers })}</span>}
+            </p>
+          )
+        }
+      />
+
+      {!isManager && (
+        <LeaveBanner
+          leaves={leaves.filter((l) => l.date >= today && l.date <= addDays(today, 7))}
+          locale={locale}
+          myMemberId={isVirtual ? null : me.id}
+        />
+      )}
 
       {/* ---- everyone, one day ---- */}
       <Card

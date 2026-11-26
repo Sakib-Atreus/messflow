@@ -31,7 +31,7 @@ export default async function AppLayout({
   ]);
 
   const [pending, { data: inboxRows }] = await Promise.all([
-    getPending(supabase, mess.id, { members: can("members"), deposits: can("deposits"), superAdmin: isSuperAdmin }),
+    getPending(supabase, mess.id, { members: can("members"), deposits: can("deposits"), superAdmin: isSuperAdmin, manager: isManager }),
     supabase.from("notifications").select("id, title, body, url, created_at, read_at").order("created_at", { ascending: false }).limit(15),
   ]);
   const access = { perms, isManager, isSuperAdmin, badges: pending };
@@ -39,6 +39,7 @@ export default async function AppLayout({
     can("members") && { href: "/members", key: "joins" as const, count: pending["/members"] },
     can("deposits") && { href: "/deposits", key: "deposits" as const, count: pending["/deposits"] },
     isSuperAdmin && { href: "/admin", key: "messRequests" as const, count: pending["/admin"] },
+    isManager && { href: "/meals", key: "cookOffers" as const, count: pending["/meals"] },
   ].filter((x) => !!x);
   const roleLabel = isVirtual
     ? t("roles.superAdmin")

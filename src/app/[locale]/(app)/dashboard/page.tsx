@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
-  Banknote, BarChart3, CalendarCheck, ChefHat, Megaphone, PieChart, PiggyBank, Receipt, Scale, ShoppingCart, TrendingUp,
+  Banknote, BarChart3, CalendarCheck, ChefHat, CookingPot, Megaphone, PieChart, PiggyBank, Receipt, Scale, ShoppingCart, TrendingUp,
   Sheet, UserCheck, UserPlus, UtensilsCrossed, Wallet,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -18,6 +18,9 @@ import { countMeals, effectiveMeal, getAvatars, getMealsBetween, getMembers, get
 import { mealWallet } from "@/lib/meal-wallet";
 import { MealMoneyCard, MealMoneyOverview } from "@/components/meal-money";
 import { SetupChecklist } from "@/components/setup-checklist";
+import { menuLine, type Menu } from "@/components/menu-card";
+import { LeaveBanner } from "@/components/leave-banner";
+import { closedByLeave, getLeaves } from "@/lib/leave";
 
 export default async function Dashboard({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -29,7 +32,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const kinds = mealKinds(mess);
   const tomorrow = addDays(today, 1);
 
-  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed] = await Promise.all([
+  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed, { data: menuRow }] = await Promise.all([
     getMonthSummary(supabase, mess.id, month),
     getMealsBetween(supabase, mess.id, month, today),
     can("deposits")
@@ -53,7 +56,11 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
     supabase.from("deposits").select("member_id, date, amount").eq("mess_id", mess.id).eq("status", "approved").gte("date", month).lte("date", today),
     supabase.from("bazar_entries").select("date, amount").eq("mess_id", mess.id).gte("date", month).lte("date", today),
     supabase.from("fixed_costs").select("category, amount").eq("mess_id", mess.id).eq("month", month),
+    supabase.from("meal_menus").select("breakfast, lunch, dinner").eq("mess_id", mess.id).eq("date", today).maybeSingle(),
   ]);
+  const todayMenu = menuLine(menuRow as Menu, kinds, (k) => t(`meal.${k}`), locale);
+  const leaves = await getLeaves(supabase, mess.id, today, tomorrow);
+  const closed = closedByLeave(leaves);
   const todayMeals = monthMeals.filter((m) => m.date === today);
   // first-time setup for managers: which steps are already done
   const setup = isManager && !isVirtual
@@ -235,6 +242,8 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
         </Link>
       )}
 
+      <LeaveBanner leaves={leaves} locale={locale} myMemberId={isVirtual || isManager ? null : me.id} />
+
       {showCarryWarning && <Alert>{t("dashboard.carryWarning")}</Alert>}
 
       {myWallet && (myWallet.status === "low" || myWallet.status === "out") && (
@@ -297,7 +306,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
                   date={today}
                   kind={k}
                   on={myToday[k]}
-                  locked={!can("meals") && isPastCutoff(today, mess[`${k}_cutoff`])}
+                  locked={!can("meals") && (isPastCutoff(today, mess[`${k}_cutoff`]) || closed(today, k))}
                 />
               ))}
             </div>
@@ -307,12 +316,19 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
                 date={today}
                 kinds={kinds}
                 counts={{ breakfast: myToday.guest_breakfast, lunch: myToday.guest_lunch, dinner: myToday.guest_dinner }}
-                lockedKinds={can("meals") ? [] : kinds.filter((k) => isPastCutoff(today, mess[`${k}_cutoff`]))}
+                lockedKinds={can("meals") ? [] : kinds.filter((k) => isPastCutoff(today, mess[`${k}_cutoff`]) || closed(today, k))}
               />
             </div>
+            {todayMenu && (
+              <div className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+                <CookingPot className="mr-1 inline size-4" />
+                <b>{t("menu.title")}:</b> {todayMenu}
+              </div>
+            )}
             <div
               className={cn(
-                "mt-4 rounded-xl px-3 py-2 text-sm",
+                todayMenu ? "mt-2" : "mt-4",
+                "rounded-xl px-3 py-2 text-sm",
                 iAmOnDuty ? "bg-brand-50 text-brand-900 dark:bg-brand-950/50 dark:text-brand-200" : "bg-slate-50 dark:bg-slate-800/60",
               )}
             >

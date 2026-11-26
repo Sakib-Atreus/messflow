@@ -5,7 +5,7 @@ export const cn = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 
 // One input look everywhere: 44px tall (easy to tap), soft focus ring, works in dark mode.
 export const inputClass =
-  "block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-brand-400/20 dark:disabled:bg-slate-800/60";
+  "block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 disabled:cursor-default disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-brand-400/20 dark:disabled:bg-slate-800/60";
 
 // Button family. Shared: keyboard focus ring, pressed effect, disabled look, icon spacing.
 const base =
@@ -132,10 +132,10 @@ export function Empty({ children, icon: Icon }: { children: ReactNode; icon?: Lu
   );
 }
 
-export function Checkbox({ name, label, defaultChecked }: { name: string; label: ReactNode; defaultChecked?: boolean }) {
+export function Checkbox({ name, label, defaultChecked, value }: { name: string; label: ReactNode; defaultChecked?: boolean; value?: string }) {
   return (
     <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg pr-2 select-none">
-      <input type="checkbox" name={name} defaultChecked={defaultChecked} className="size-5 rounded accent-brand-600" />
+      <input type="checkbox" name={name} value={value} defaultChecked={defaultChecked} className="size-5 rounded accent-brand-600" />
       <span>{label}</span>
     </label>
   );

@@ -51,7 +51,7 @@ export function MealToggle({
         val
           ? "border-brand-600 bg-brand-600 text-white"
           : "border-slate-300 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900",
-        locked && "cursor-not-allowed opacity-50",
+        locked && "cursor-default opacity-50",
         pending && "animate-pulse",
       )}
     >
@@ -95,7 +95,7 @@ export function GuestStepper({
   };
 
   const b =
-    "grid size-8 place-items-center rounded-lg border border-slate-300 text-base leading-none transition hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800";
+    "grid size-8 place-items-center rounded-lg border border-slate-300 text-base leading-none transition hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent dark:border-slate-700 dark:hover:bg-slate-800 dark:disabled:hover:bg-transparent";
   return (
     <span className={cn("inline-flex items-center gap-1", pending && "opacity-60")}>
       <button type="button" className={b} disabled={locked || val === 0} onClick={() => change(-1)} aria-label={`${t("common.decrease")} - ${t(`meal.${kind}`)} ${t("meal.guest")}`} data-step="-">−</button>
@@ -136,8 +136,9 @@ export function HalfToggle({
         "grid size-8 place-items-center rounded-lg border text-xs font-bold leading-none transition",
         val
           ? "border-amber-500 bg-amber-400 text-amber-950"
-          : "border-slate-200 text-slate-400 hover:border-slate-400 dark:border-slate-700",
-        locked && "cursor-not-allowed opacity-50",
+          : "border-slate-200 text-slate-400 dark:border-slate-700",
+        !val && !locked && "hover:border-slate-400",
+        locked && "cursor-default opacity-50",
         pending && "animate-pulse",
       )}
     >

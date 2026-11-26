@@ -37,6 +37,14 @@ export const requireUser = cache(async () => {
   return { supabase, user, locale, profile, isSuperAdmin: !!profile?.is_super_admin };
 });
 
+/** The cook (khala) login of a mess, if this user is one. Cooks only see the kitchen page. */
+export const getCook = cache(async () => {
+  const { supabase, user } = await getSession();
+  if (!user) return null;
+  const { data } = await supabase.from("mess_cooks").select("mess_id, name").eq("user_id", user.id).maybeSingle();
+  return (data as { mess_id: string; name: string } | null) ?? null;
+});
+
 type Membership = Member & { mess: Mess; mess_role: { name: string; permissions: Permission[] } | null };
 
 /** A super admin looking at a mess they are not a member of acts through this stand-in. */
@@ -61,7 +69,10 @@ export const getContext = cache(async () => {
     const { data: mess } = await supabase.from("messes").select("*").eq("id", wanted).maybeSingle();
     if (mess) me = virtualMember(mess as Mess, profile?.full_name || "Admin");
   }
-  if (!me) return redirect({ href: isSuperAdmin ? "/admin" : "/onboarding", locale });
+  if (!me) {
+    if (!isSuperAdmin && (await getCook())) return redirect({ href: "/kitchen", locale });
+    return redirect({ href: isSuperAdmin ? "/admin" : "/onboarding", locale });
+  }
 
   const isVirtual = me.id === VIRTUAL_ID;
   const isManager = isSuperAdmin || (me.role === "manager" && me.status === "active");

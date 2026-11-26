@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { notifyApproved } from "@/lib/notify";
+import { notifyApproved, notifyCookLeave, notifyCookOffer, notifyLeaveCancelled, notifyOfferReviewed } from "@/lib/notify";
 import { getContext } from "@/lib/mess";
-import { createAccount } from "@/lib/accounts";
+import { createAccount, resetPassword } from "@/lib/accounts";
 import { createAdminClient } from "@/lib/supabase/server";
 import { toErrorKey, type ActionResult } from "@/lib/errors";
 import { isValidDate, todayDhaka } from "@/lib/dates";
@@ -177,4 +177,130 @@ export async function deleteRole(id: string): Promise<ActionResult> {
   const { error } = await supabase.from("mess_roles").delete().eq("id", id).eq("mess_id", mess.id);
   if (error) return { error: toErrorKey(error) };
   return done();
+}
+
+// ---------------------------------------------------------------- cook (khala) logins
+/** Manager: create a cook login. The cook only sees the kitchen page (meal counts + menu). */
+export async function addCook(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { mess, locale, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const name = str(fd, "name");
+  if (!name) return { error: "INVALID_INPUT" };
+  const acc = await createAccount({ login: str(fd, "login"), password: str(fd, "password"), fullName: name, locale });
+  if ("error" in acc) return { error: acc.error };
+  const admin = createAdminClient();
+  const { error } = await admin.from("mess_cooks").insert({ mess_id: mess.id, user_id: acc.id, name });
+  if (error) {
+    await admin.auth.admin.deleteUser(acc.id);
+    return { error: toErrorKey(error) };
+  }
+  return done({ message: "cook.loginCreated", detail: loginDetail(acc.login, acc.password) });
+}
+
+async function myCook(id: string) {
+  const { supabase, mess, isManager } = await getContext();
+  if (!isManager) return null;
+  const { data } = await supabase.from("mess_cooks").select("id, user_id").eq("id", id).eq("mess_id", mess.id).maybeSingle();
+  return data as { id: string; user_id: string } | null;
+}
+
+/** Manager: give the cook a new temporary password. */
+export async function resetCookPassword(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const cook = await myCook(str(fd, "id"));
+  if (!cook) return { error: "FORBIDDEN" };
+  const r = await resetPassword(cook.user_id, str(fd, "password"));
+  if ("error" in r) return { error: r.error };
+  return done({ message: "cook.loginCreated", detail: loginDetail(r.login, r.password) });
+}
+
+/** Manager: remove the cook. Their login is deleted too (it is only used for the kitchen page). */
+export async function removeCook(id: string): Promise<ActionResult> {
+  const cook = await myCook(id);
+  if (!cook) return { error: "FORBIDDEN" };
+  const admin = createAdminClient();
+  const { count } = await admin.from("mess_members").select("id", { count: "exact", head: true }).eq("user_id", cook.user_id);
+  const { error } = count
+    ? await admin.from("mess_cooks").delete().eq("id", cook.id)
+    : await admin.auth.admin.deleteUser(cook.user_id);
+  if (error) return { error: "UNKNOWN" };
+  return done();
+}
+
+// ---------------------------------------------------------------- daily menu
+/** Manager: what to cook on a day (one short line per meal). Empty clears it. */
+export async function saveMenu(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { supabase, mess, user, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const date = str(fd, "date");
+  if (!isValidDate(date)) return { error: "INVALID_INPUT" };
+  const line = (k: string) => str(fd, k).slice(0, 200) || null;
+  const row = { breakfast: line("breakfast"), lunch: line("lunch"), dinner: line("dinner"), note: str(fd, "note").slice(0, 500) || null };
+  const { error } =
+    row.breakfast || row.lunch || row.dinner || row.note
+      ? await supabase
+          .from("meal_menus")
+          .upsert({ mess_id: mess.id, date, ...row, updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "mess_id,date" })
+      : await supabase.from("meal_menus").delete().eq("mess_id", mess.id).eq("date", date);
+  if (error) return { error: toErrorKey(error) };
+  return done({ message: "menu.saved" });
+}
+
+// ---------------------------------------------------------------- khala's leave
+type Kind = "breakfast" | "lunch" | "dinner";
+const KINDS: Kind[] = ["breakfast", "lunch", "dinner"];
+
+/** Manager: khala is on leave for these dates and meals. Those meals go off for everyone. */
+export async function markCookLeave(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { supabase, mess, user, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const from = str(fd, "from");
+  const to = str(fd, "to") || from;
+  const meals = fd.getAll("meals").map(String).filter((k): k is Kind => KINDS.includes(k as Kind));
+  if (!isValidDate(from) || !isValidDate(to) || !meals.length) return { error: "INVALID_INPUT" };
+  const { error } = await supabase.rpc("set_cook_leave", { p_mess: mess.id, p_from: from, p_to: to, p_meals: meals });
+  if (error) return { error: toErrorKey(error) };
+  after(() => notifyCookLeave(mess.id, user.id, from, to, meals));
+  return done({ message: "leave.marked" });
+}
+
+/** Manager: khala is coming after all. */
+export async function cancelCookLeave(id: string): Promise<ActionResult> {
+  const { supabase, mess, user, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const { data: l } = await supabase.from("cook_leaves").select("date, meal").eq("id", id).eq("mess_id", mess.id).maybeSingle();
+  if (!l) return { error: "FORBIDDEN" };
+  const { error } = await supabase.rpc("cancel_cook_leave", { p_leave: id });
+  if (error) return { error: toErrorKey(error) };
+  after(() => notifyLeaveCancelled(mess.id, user.id, l.date, l.meal as Kind));
+  return done({ message: "leave.cancelled" });
+}
+
+/** Member: "I'll cook" on a leave day. The manager approves it. */
+export async function offerToCook(leaveId: string): Promise<ActionResult> {
+  const { supabase, mess, me } = await getContext();
+  const { data: l } = await supabase.from("cook_leaves").select("date, meal").eq("id", leaveId).eq("mess_id", mess.id).maybeSingle();
+  if (!l) return { error: "FORBIDDEN" };
+  const { error } = await supabase.rpc("volunteer_to_cook", { p_leave: leaveId });
+  if (error) return { error: toErrorKey(error) };
+  after(() => notifyCookOffer(mess.id, me.display_name, l.date, l.meal as Kind));
+  return done({ message: "leave.offerSent" });
+}
+
+/** Manager: approve or reject an "I'll cook" offer. */
+export async function reviewCookOffer(id: string, approve: boolean): Promise<ActionResult> {
+  const { supabase, mess, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const { data: v } = await supabase
+    .from("cook_volunteers")
+    .select("member_id, leave:cook_leaves(date, meal), member:mess_members(display_name, user_id)")
+    .eq("id", id)
+    .eq("mess_id", mess.id)
+    .maybeSingle();
+  if (!v) return { error: "FORBIDDEN" };
+  const { error } = await supabase.rpc("review_cook_volunteer", { p_id: id, p_approve: approve });
+  if (error) return { error: toErrorKey(error) };
+  const leave = v.leave as unknown as { date: string; meal: Kind };
+  const member = v.member as unknown as { display_name: string; user_id: string | null };
+  after(() => notifyOfferReviewed(mess.id, member.user_id, member.display_name, approve, leave.date, leave.meal));
+  return done({ message: approve ? "leave.offerApproved" : "leave.offerRejected" });
 }

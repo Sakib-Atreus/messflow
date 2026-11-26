@@ -64,9 +64,23 @@ dialog[open] { animation: mf-in .2s ease-out; }
 }
 details[open] > .mf-sum::after { transform: rotate(-135deg) translateY(-1px); }
 
-/* bigger tap targets for native selects/dates, and the theme's accent everywhere */
-select { cursor: pointer; }
+/* the theme's accent everywhere */
 :root { accent-color: var(--color-brand-600); }
+
+/* Hand cursor on everything you can click; locked / disabled things keep the normal arrow.
+   In the base layer so a utility (e.g. cursor-wait while saving) still wins. */
+@layer base {
+  button, [role="button"], [role="tab"], summary, select,
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input::-webkit-calendar-picker-indicator,
+  label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) {
+    cursor: pointer;
+  }
+  button:disabled, [aria-disabled="true"], select:disabled,
+  input:disabled, label:has(> input:disabled) {
+    cursor: default;
+  }
+}
 
 @media print {
   .no-print { display: none !important; }

@@ -93,7 +93,7 @@ export function MonthPicker({
                   aria-current={selected ? "date" : undefined}
                   onClick={() => go(year, m)}
                   className={cn(
-                    "min-h-10 rounded-xl text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-35",
+                    "min-h-10 rounded-xl text-sm font-medium transition disabled:cursor-default disabled:opacity-35",
                     selected
                       ? "bg-brand-600 text-white shadow-sm"
                       : "hover:bg-brand-50 dark:hover:bg-brand-950/50",
