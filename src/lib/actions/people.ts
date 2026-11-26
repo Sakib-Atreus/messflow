@@ -304,3 +304,31 @@ export async function reviewCookOffer(id: string, approve: boolean): Promise<Act
   after(() => notifyOfferReviewed(mess.id, member.user_id, member.display_name, approve, leave.date, leave.meal));
   return done({ message: approve ? "leave.offerApproved" : "leave.offerRejected" });
 }
+
+// ---------------------------------------------------------------- member password reset
+/**
+ * Manager: give a member a new temporary password (they choose their own at next login).
+ * Only for ordinary members of this mess: not yourself, not a manager, not the super admin, and not
+ * someone who is also in another mess or is a cook somewhere (the super admin handles those).
+ */
+export async function resetMemberPassword(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { supabase, mess, user, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const { data: m } = await supabase
+    .from("mess_members")
+    .select("id, user_id, role")
+    .eq("id", str(fd, "id"))
+    .eq("mess_id", mess.id)
+    .maybeSingle();
+  if (!m?.user_id || m.user_id === user.id || m.role === "manager") return { error: "FORBIDDEN" };
+  const admin = createAdminClient();
+  const [{ data: prof }, { count: elsewhere }, { count: cook }] = await Promise.all([
+    admin.from("profiles").select("is_super_admin").eq("id", m.user_id).single(),
+    admin.from("mess_members").select("id", { count: "exact", head: true }).eq("user_id", m.user_id).neq("mess_id", mess.id),
+    admin.from("mess_cooks").select("id", { count: "exact", head: true }).eq("user_id", m.user_id),
+  ]);
+  if (prof?.is_super_admin || elsewhere || cook) return { error: "RESET_NOT_ALLOWED" };
+  const r = await resetPassword(m.user_id, str(fd, "password"));
+  if ("error" in r) return { error: r.error };
+  return done({ message: "members.passwordReset", detail: loginDetail(r.login, r.password) });
+}

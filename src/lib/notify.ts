@@ -28,6 +28,7 @@ export async function runScheduledNotifications(now = new Date()) {
   const admin = createAdminClient();
   const today = todayDhaka(now);
   const minutes = dhakaMinutes(now);
+  await weeklyBackupReminder(admin, now, minutes).catch((e) => console.error("[messflow] backup reminder:", e));
   const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
   const log: string[] = [];
 
@@ -403,4 +404,40 @@ export async function cleanupOldVoice() {
   if (voiceOnly.length) await admin.from("bazar_needs").delete().in("id", voiceOnly);
   if (keep.length) await admin.from("bazar_needs").update({ voice_path: null }).in("id", keep);
   return data.length;
+}
+
+// ---------------------------------------------------------------- backups
+const BACKUP_EVERY_DAYS = 7;
+
+async function superAdmins(admin: SupabaseClient) {
+  const { data } = await admin.from("profiles").select("id").eq("is_super_admin", true);
+  return (data ?? []).map((p) => p.id as string);
+}
+
+/** At most once a week (after 10 AM Dhaka): remind the super admin if no backup in the last 7 days. */
+async function weeklyBackupReminder(admin: SupabaseClient, now: Date, minutes: number) {
+  if (minutes < 600) return;
+  const { data: last } = await admin.rpc("last_backup");
+  const days = last ? (now.getTime() - Date.parse(last as string)) / 864e5 : Infinity;
+  if (days < BACKUP_EVERY_DAYS) return;
+  const week = Math.floor(now.getTime() / (7 * 864e5));
+  const { data: first } = await admin.rpc("claim_reminder", { p_kind: "backup", p_key: `week-${week}` });
+  if (!first) return;
+  await pushToUsers(await superAdmins(admin), null, (t, { locale }) => ({
+    title: t("push.backupTitle"),
+    body: last ? t("push.backupOld", { days: Math.floor(days) }) : t("push.backupNever"),
+    url: `/${locale}/admin`,
+    tag: "backup",
+  }));
+}
+
+/** A month was closed: a good moment for a backup. */
+export async function notifyMonthClosedBackup(messName: string, month: string) {
+  const admin = createAdminClient();
+  await pushToUsers(await superAdmins(admin), null, (t, { locale }) => ({
+    title: t("push.backupTitle"),
+    body: t("push.backupMonthClosed", { mess: messName, month: new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "bn-BD", { month: "long", year: "numeric" }).format(new Date(`${month.slice(0, 7)}-01T00:00:00Z`)) }),
+    url: `/${locale}/admin`,
+    tag: "backup",
+  }));
 }

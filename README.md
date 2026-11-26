@@ -125,7 +125,7 @@ balance     = carried in + deposits − meal cost − your share of fixed costs
 | Role | How they get access | What they can do |
 |---|---|---|
 | **Super admin** | `pnpm admin:create` | Every mess and user: approve messes, create managers, open any mess, reset passwords, block accounts |
-| **Manager** | Created by the super admin, or a new-mess request the super admin approves | Everything in their mess, including custom roles and settings |
+| **Manager** | Created by the super admin, or a new-mess request the super admin approves | Everything in their mess, including custom roles, settings and resetting a member's forgotten password |
 | **Custom role** | Given by the manager | Only the ticked permissions: meals, bazar, deposits, fixed costs, members, bazar duty, notices, close month, settings |
 | **Member** | Added by the manager, or invite code + approval | Own meals and guests before the cutoff, submit payments, offer "I'll cook" on khala's leave days, tick bazar items as bought, view the mess's numbers |
 | **Cook (khala)** | Created by the manager (Members → Cook / Khala) | One view-only page: today's meal counts, the menu, the manager's note, leave days, and "Need from bazar" (tap items, write, or send a voice message). Not a member: no meals, bills or balance |
@@ -274,6 +274,7 @@ pnpm db:backup        # live project → backups/messflow-live-YYYY-MM-DD_HHMM.s
 - Run it **once a week or at least at every month close**, and keep the file somewhere safe, such as a private Google Drive folder. The `backups/` folder is git-ignored: the files contain personal data and password hashes, so never share them.
 - Needs `pg_dump` / `psql` 17 or newer (Mac: `brew install libpq && brew link --force libpq`).
 - Not included: profile photos and voice messages (files in Supabase Storage), login sessions (people just log in again).
+- **Reminders:** the admin panel shows when the last backup was taken (amber after 7 days), the super admin gets a notification once a week when a backup is overdue, and another whenever a mess closes a month.
 
 **Restore** (only if the live project is lost or damaged):
 

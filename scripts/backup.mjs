@@ -1,6 +1,7 @@
 // Full data backup of the database in DATABASE_URL: every mess, member, meal, bazar, deposit, bill,
 // month… plus the logins (auth.users / auth.identities, so passwords keep working after a restore).
-// Writes one plain SQL file to backups/ (git-ignored). Read-only: it never changes the database.
+// Writes one plain SQL file to backups/ (git-ignored). It doesn't change any data; it only adds a
+// line to the backup log so the admin panel can show when the last backup was taken.
 //
 //   pnpm db:backup        → live project (.env.production.local)
 //   pnpm db:backup:dev    → development project (.env.local)
@@ -60,6 +61,9 @@ const summary = {
   deposits: await count("public.deposits"),
   "closed months": await count("public.months where status = 'closed'"),
 };
+const sizeKb = Math.round(fs.statSync(file).size / 1024);
+// note it in the backup log (admin panel shows "last backup"; skipped on databases without the log yet)
+await client.query("insert into private.backup_log (label, size_kb) values ($1, $2)", [label, sizeKb]).catch(() => {});
 await client.end();
 
 const size = (fs.statSync(file).size / 1024).toFixed(0);

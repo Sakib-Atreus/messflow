@@ -6,7 +6,7 @@ const KNOWN = [
 
 export type ErrorKey = (typeof KNOWN)[number] | "INVALID_LOGIN" | "USER_EXISTS" | "WEAK_PASSWORD" | "INVALID_INPUT" | "UNKNOWN"
   | "PASSWORD_MISMATCH" | "INVALID_USERNAME" | "LOGIN_TAKEN" | "DUPLICATE"
-  | "INVALID_EMAIL" | "SAME_EMAIL" | "WRONG_PASSWORD";
+  | "INVALID_EMAIL" | "SAME_EMAIL" | "WRONG_PASSWORD" | "RESET_NOT_ALLOWED";
 
 /** Maps a Supabase/Postgres error to a translation key under `errors.*`. */
 export function toErrorKey(err: { message?: string } | null | undefined): ErrorKey {

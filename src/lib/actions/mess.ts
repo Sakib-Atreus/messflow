@@ -10,7 +10,7 @@ import { getContext, getSession, MESS_COOKIE } from "@/lib/mess";
 import { toErrorKey, type ActionResult } from "@/lib/errors";
 import { isValidDate, monthStart, todayDhaka } from "@/lib/dates";
 import type { DepositStatus, MealKind, PaymentMethod } from "@/lib/types";
-import { notifyDepositReviewed, notifyDepositSubmitted, notifyJoinRequest, notifyMessRequest } from "@/lib/notify";
+import { notifyDepositReviewed, notifyDepositSubmitted, notifyJoinRequest, notifyMessRequest, notifyMonthClosedBackup } from "@/lib/notify";
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const num = (fd: FormData, k: string) => Number(String(fd.get(k) ?? "").replace(/,/g, ""));
@@ -253,6 +253,7 @@ export async function closeMonth(month: string): Promise<ActionResult> {
   const { supabase, mess } = await getContext();
   const { error } = await supabase.rpc("close_month", { p_mess: mess.id, p_month: month });
   if (error) return { error: toErrorKey(error) };
+  after(() => notifyMonthClosedBackup(mess.name, month)); // a good moment for a backup
   return done();
 }
 

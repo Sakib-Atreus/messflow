@@ -7,7 +7,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { CopyButton, WhatsAppButton } from "@/components/copy-button";
 import { Avatar, Badge, btn, Card, Checkbox, cn, Field, inputClass, PageTitle } from "@/components/ui";
 import { regenerateInvite } from "@/lib/actions/mess";
-import { addMember, createMemberLogin, reviewJoinRequest, setMemberBills, updateMember } from "@/lib/actions/people";
+import { addMember, createMemberLogin, resetMemberPassword, reviewJoinRequest, setMemberBills, updateMember } from "@/lib/actions/people";
 import { BillChoices, type BillOption } from "@/components/bill-choices";
 import { RowPanels } from "@/components/row-panels";
 import { Drawer } from "@/components/drawer";
@@ -283,6 +283,21 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
                     </p>
                     <BillChoices bills={billsFor(m.id)} isNew={false} />
                     <SubmitButton>{t("common.save")}</SubmitButton>
+                  </ActionForm>
+                ),
+              }]
+            : []),
+          ...(isManager && m.user_id && m.user_id !== me.user_id && m.role !== "manager"
+            ? [{
+                key: "password", icon: "password" as const, label: t("admin.resetPassword"),
+                content: (
+                  <ActionForm action={resetMemberPassword} reset={false}>
+                    <input type="hidden" name="id" value={m.id} />
+                    <p className="text-sm text-slate-500">{t("members.resetHelp", { name: m.display_name })}</p>
+                    <Field label={t("members.tempPassword")} hint={t("members.tempPasswordHint")}>
+                      <input name="password" defaultValue={tempPassword()} className={`${inputClass} font-mono`} />
+                    </Field>
+                    <SubmitButton className={btn.secondary}>{t("admin.resetPassword")}</SubmitButton>
                   </ActionForm>
                 ),
               }]

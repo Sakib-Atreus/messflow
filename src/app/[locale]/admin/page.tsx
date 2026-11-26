@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Building2, Inbox, ShoppingCart, UserCheck, Users, UtensilsCrossed } from "lucide-react";
+import { Building2, DatabaseBackup, Inbox, ShoppingCart, UserCheck, Users, UtensilsCrossed } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { Avatar, btn, Card, Empty, PageTitle, Stat } from "@/components/ui";
 import { reviewMessRequest } from "@/lib/actions/admin";
@@ -16,7 +16,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const { supabase, profile } = await requireUser();
   const t = await getTranslations();
 
-  const [{ data: stats }, { data: reqs }, { data: messes }] = await Promise.all([
+  const [{ data: stats }, { data: reqs }, { data: messes }, { data: lastBackup }] = await Promise.all([
     supabase.rpc("platform_stats"),
     supabase
       .from("mess_requests")
@@ -24,6 +24,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
       .eq("status", "pending")
       .order("created_at"),
     supabase.from("messes").select("id, name, address, created_at").order("created_at", { ascending: false }).limit(5),
+    supabase.rpc("last_backup"),
   ]);
   const s = (stats ?? {}) as Stats;
   // requester emails live in auth.users → service role, only for the listed requests
@@ -47,6 +48,32 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
         <Stat label={t("admin.mealsToday")} value={fmtNumber(locale, s.meals_today ?? 0)} icon={UtensilsCrossed} />
         <Stat label={t("admin.bazarMonth")} value={fmtMoney(locale, s.bazar_month ?? 0)} icon={ShoppingCart} />
       </div>
+
+      {(() => {
+        const days = lastBackup ? Math.floor((Date.now() - Date.parse(lastBackup as string)) / 864e5) : null;
+        const due = days === null || days >= 7;
+        return (
+          <Card
+            title={t("admin.backupTitle")}
+            icon={DatabaseBackup}
+            className={due ? "border-amber-300 dark:border-amber-800" : undefined}
+          >
+            <p className={due ? "font-medium text-amber-800 dark:text-amber-300" : "text-slate-700 dark:text-slate-300"}>
+              {days === null
+                ? t("admin.backupNever")
+                : t("admin.backupLast", {
+                    date: fmtDate(locale, new Date(lastBackup as string).toLocaleDateString("sv-SE", { timeZone: "Asia/Dhaka" }), { day: "numeric", month: "long" }),
+                    days: fmtNumber(locale, days),
+                  })}
+            </p>
+            {due && (
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                {t("admin.backupHow")} <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs dark:bg-slate-800">pnpm db:backup</code>
+              </p>
+            )}
+          </Card>
+        );
+      })()}
 
       <Card title={t("admin.messRequests", { count: reqs?.length ?? 0 })} icon={Inbox}
         className={reqs?.length ? "border-amber-300 dark:border-amber-800" : undefined}>

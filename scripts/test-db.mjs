@@ -356,6 +356,13 @@ ok('avatar: user can set own avatar_url', (await as(B, `select avatar_url from p
   await throws('needs: a stranger cannot tick it', () => as(E, `select mark_need_bought($1)`, [oil]), 'FORBIDDEN');
 }
 
+// ---- backup log + app-wide reminders
+await db.query(`insert into private.backup_log (label, size_kb) values ('live', 61)`);
+ok('backup: super admin sees when the last backup was taken', (await as(S, `select last_backup() t`)).rows[0].t !== null);
+ok('backup: a member does not', (await as(B, `select last_backup() t`)).rows[0].t === null);
+await throws('reminders: members cannot claim reminders', () => as(B, `select claim_reminder('backup', 'w1')`), 'permission denied');
+ok('reminders: claimed once only (server)', (await asRole('service_role', '', `select claim_reminder('backup', 'w1') a`)).rows[0].a === true && (await asRole('service_role', '', `select claim_reminder('backup', 'w1') a`)).rows[0].a === false);
+
 // ---- push subscriptions & server-only data
 await as(B, `insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://push/b', 'k', 'a')`, [B]);
 await throws('cannot subscribe as someone else', () => as(B, `insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://push/x', 'k', 'a')`, [A]), 'row-level security');

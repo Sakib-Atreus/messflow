@@ -273,7 +273,9 @@
     "thisMonth": "{month}",
     "fullBill": "Full bill & meals",
     "call": "Call",
-    "search": "Search name, room or phone"
+    "search": "Search name, room or phone",
+    "resetHelp": "{name} forgot their password? Give a temporary one; they choose their own at the next login.",
+    "passwordReset": "New temporary password - share it with them (they set their own at the next login):"
   },
   "costs": {
     "title": "Fixed costs",
@@ -401,7 +403,8 @@
     "INVALID_EMAIL": "Please enter a valid email address.",
     "SAME_EMAIL": "That's already your email.",
     "WRONG_PASSWORD": "Current password is wrong.",
-    "COOK_LEAVE": "Khala is on leave for this meal and nobody is cooking yet. Tap \"I'll cook\" if you will."
+    "COOK_LEAVE": "Khala is on leave for this meal and nobody is cooking yet. Tap \"I'll cook\" if you will.",
+    "RESET_NOT_ALLOWED": "This person is also in another mess or is an admin. Ask the super admin to reset it."
   },
   "roster": {
     "title": "Bazar duty",
@@ -494,7 +497,11 @@
     "offerRejectedBody": "{meal} on {when} stays off.",
     "needsTitle": "🛒 {who}: {items}",
     "needsBody": "Needed from the bazar.",
-    "needsVoice": "🎤 voice message"
+    "needsVoice": "🎤 voice message",
+    "backupTitle": "📦 Time for a backup",
+    "backupOld": "The last backup was {days} days ago. Run pnpm db:backup on your computer.",
+    "backupNever": "No backup has been taken yet. Run pnpm db:backup on your computer.",
+    "backupMonthClosed": "{mess} closed {month}. A good moment to run pnpm db:backup."
   },
   "notify": {
     "title": "Notifications",
@@ -578,7 +585,11 @@
     "removeSuper": "Remove super admin",
     "makeSuper": "Make super admin",
     "resetPassword": "Reset password",
-    "resetHelp": "Creates a new temporary password. Share it with the person; they set their own at next login."
+    "resetHelp": "Creates a new temporary password. Share it with the person; they set their own at next login.",
+    "backupTitle": "Backup",
+    "backupNever": "No backup yet. Take one now.",
+    "backupLast": "Last backup: {date} ({days} days ago)",
+    "backupHow": "On your computer, in the messflow folder, run"
   },
   "theme": {
     "label": "Theme",
