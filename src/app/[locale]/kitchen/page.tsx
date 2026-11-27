@@ -14,6 +14,7 @@ import { fmtDate, fmtNumber, fmtTime } from "@/lib/format";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
 import { NeedsPanel } from "@/components/needs-panel";
+import { PushPrompt } from "@/components/push-prompt";
 import { NeedsList } from "@/components/needs-list";
 
 type Kitchen = {
@@ -78,6 +79,8 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
           <h1 className="text-2xl font-bold">{t("kitchen.title")}</h1>
           <p className="text-lg text-slate-500">{fmtDate(locale, today, { weekday: "long", day: "numeric", month: "long" })}</p>
         </div>
+
+        <PushPrompt vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} forCook />
 
         {k.menu?.note && (
           <section className="rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">

@@ -245,8 +245,10 @@ Each member turns notifications on once per device under **More → Notification
 | iPhone (Safari) | Share → **Add to Home Screen** (push needs iOS 16.4+ and opening from the Home Screen) |
 | Android APK | Paste your deployed URL into [PWABuilder](https://www.pwabuilder.com) → Android to generate an `.apk` / `.aab` |
 
-**Notifications** arrive in the phone's notification bar like any chat app, even when MessFlow is closed. Each person turns
-them on once: **More → Notifications → Allow**. If they come late on Xiaomi, Oppo, Vivo or Realme phones, set MessFlow
+**Notifications** arrive in the phone's notification bar like any chat app, even when MessFlow is closed. Phones only allow
+them after the person taps **Allow** once, so after login the dashboard (and khala's page) shows a **Turn on notifications**
+banner: one tap, then Allow, and every type is on. *Later* hides it for 3 days. Anyone can switch types off, or turn them
+off on that phone, in **More → Notifications**. If they come late on Xiaomi, Oppo, Vivo or Realme phones, set MessFlow
 (or Chrome) to *No restrictions* in the phone's battery settings.
 
 ## Project structure

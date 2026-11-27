@@ -61,7 +61,7 @@ const ok = (n, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : 
 
     await r.goto(BASE + "/en/meals", { waitUntil: "networkidle" });
     ok("manager's bell/nav shows the offer", /1 offer to cook/.test(await r.locator("header").innerHTML()) || (await r.locator('a[href$="/meals"] span', { hasText: "1" }).count()) > 0);
-    ok("manager sees 'Karim offered to cook'", await r.getByText("Karim offered to cook").count() > 0);
+    ok("manager sees 'Karim offered to cook' in the leave dialog", (await (await leaveBox()).innerText()).includes("Karim offered to cook"));
     await r.screenshot({ path: `${OUT}/manager-offer.png`, fullPage: true });
     await (await leaveBox()).getByRole("button", { name: "Approve" }).click();
     await r.getByText("Approved - everyone").waitFor({ timeout: 30000 });

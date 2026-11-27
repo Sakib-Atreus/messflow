@@ -15,7 +15,7 @@ import path from "node:path";
 
 const MAIN = [
   "stuck-saves", "speed-safety", "temp-password", "weekly-menu", "week-view", "cook", "leave", "needs",
-  "opening", "reset-password", "theme", "language", "bell", "landing", "footer", "cursor",
+  "opening", "reset-password", "theme", "language", "bell", "push-prompt", "landing", "footer", "cursor",
 ];
 const EXTRA = ["sweep", "speed"]; // every page × role × screen (slow), and a timing report
 const dir = path.resolve("tests/e2e");

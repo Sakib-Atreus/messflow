@@ -18,6 +18,7 @@ import { countMeals, effectiveMeal, getAvatars, getMealsBetween, getMembers, get
 import { mealWallet } from "@/lib/meal-wallet";
 import { MealMoneyCard, MealMoneyOverview } from "@/components/meal-money";
 import { SetupChecklist } from "@/components/setup-checklist";
+import { PushPrompt } from "@/components/push-prompt";
 import { menuLine } from "@/components/menu-card";
 import { getDayMenu } from "@/lib/menu";
 import { LeaveBanner } from "@/components/leave-banner";
@@ -220,6 +221,8 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
         </div>
         <Badge tone={isStaff ? "blue" : "slate"}>{roleLabel}</Badge>
       </div>
+
+      {!isVirtual && <PushPrompt vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />}
 
       {setup && <SetupChecklist messId={mess.id} steps={setup} />}
 

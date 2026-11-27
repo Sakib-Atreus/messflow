@@ -520,7 +520,14 @@
     "duty": "My bazar duty",
     "dues": "Payment due",
     "notices": "New notices",
-    "deposits": "Deposits (approved / to approve)"
+    "deposits": "Deposits (approved / to approve)",
+    "promptTitle": "Turn on notifications",
+    "promptBody": "Get meal, bazar, deposit and notice updates on your phone, even when the app is closed.",
+    "promptBodyCook": "Get important updates from the mess on your phone.",
+    "promptOn": "Turn on",
+    "promptLater": "Later",
+    "promptOk": "OK",
+    "promptDone": "Notifications are on"
   },
   "perms": {
     "meals": "Meals",

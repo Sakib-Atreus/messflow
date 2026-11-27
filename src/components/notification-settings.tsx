@@ -2,21 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { removeSubscription, saveSubscription, sendTestPush, updateNotifyPrefs } from "@/lib/actions/features";
+import { removeSubscription, sendTestPush, updateNotifyPrefs } from "@/lib/actions/features";
 import type { NotifyPrefs } from "@/lib/push";
+import { enablePush, pushState, swRegistration, type PushState } from "@/lib/push-client";
 import { btn } from "./ui";
 
-type State = "loading" | "unsupported" | "ios-install" | "denied" | "off" | "on";
-
-function b64ToBytes(b64: string) {
-  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
-}
-
-async function registration() {
-  return (await navigator.serviceWorker.getRegistration("/")) ?? (await navigator.serviceWorker.register("/sw.js"));
-}
+type State = "loading" | PushState;
 
 const KINDS = ["cutoff", "duty", "dues", "notices", "deposits"] as const;
 
@@ -30,17 +21,7 @@ export function NotificationSettings({ vapidKey, prefs: initial, compact }: { va
   const [pending, start] = useTransition();
 
   useEffect(() => {
-    (async () => {
-      const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      const standalone =
-        window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-        return setState(ios && !standalone ? "ios-install" : "unsupported");
-      }
-      if (Notification.permission === "denied") return setState("denied");
-      const sub = await (await registration()).pushManager.getSubscription();
-      setState(sub ? "on" : "off");
-    })().catch(() => setState("unsupported"));
+    pushState().then(setState, () => setState("unsupported"));
   }, []);
 
   if (!vapidKey) return <p className="text-sm text-slate-500">{t("notConfigured")}</p>;
@@ -48,20 +29,14 @@ export function NotificationSettings({ vapidKey, prefs: initial, compact }: { va
   const enable = () =>
     start(async () => {
       setMsg(null);
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") return setState(perm === "denied" ? "denied" : "off");
-      const reg = await registration();
-      const sub =
-        (await reg.pushManager.getSubscription()) ??
-        (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(vapidKey) }));
-      const r = await saveSubscription(sub.toJSON(), navigator.userAgent);
-      if (r.error) return setMsg(tErr(r.error));
-      setState("on");
+      const r = await enablePush(vapidKey);
+      setState(r.state);
+      if (r.error) setMsg(tErr(r.error));
     });
 
   const disable = () =>
     start(async () => {
-      const sub = await (await registration()).pushManager.getSubscription();
+      const sub = await (await swRegistration()).pushManager.getSubscription();
       if (sub) {
         await removeSubscription(sub.endpoint);
         await sub.unsubscribe();
