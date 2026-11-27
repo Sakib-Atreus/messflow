@@ -31,6 +31,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       sessionStorage.setItem(KEY, String(Date.now()));
     } catch {}
     if (Date.now() - last > 15_000) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- show "reloading…" just before the page reloads
       setReloading(true);
       window.location.reload();
     }

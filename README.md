@@ -139,7 +139,7 @@ New sign-ups can do nothing until they are approved: by the super admin for a ne
 
 | Layer | Technology |
 |---|---|
-| Framework | [Next.js 15](https://nextjs.org) (App Router, Server Actions), React 19 |
+| Framework | [Next.js 16](https://nextjs.org) (App Router, Server Actions), React 19.2 |
 | Database and auth | [Supabase](https://supabase.com): Postgres, Row Level Security, `pg_cron`, Storage |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com), [lucide-react](https://lucide.dev) icons |
 | Languages | [next-intl](https://next-intl.dev) (`bn`, `en`) |
@@ -244,6 +244,7 @@ src/app/[locale]/admin/   Super admin panel
 src/app/[locale]/kitchen/ The cook's (khala's) single page
 src/app/[locale]/page.tsx Landing page (src/components/landing.tsx); images in public/landing/
 src/app/api/cron/         Daily and 10-minute scheduled endpoints
+src/proxy.ts              Runs before every page: language (bn/en) and keeping the login fresh
 src/components/           UI components (forms, dialogs, charts, meal toggles…)
 src/lib/actions/          Server actions (all writes)
 src/lib/                  Supabase clients, queries, dates, meal money, push and notification logic

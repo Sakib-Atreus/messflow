@@ -25,7 +25,7 @@ export default async function ReportPage({
   const t = await getTranslations();
   const today = todayDhaka();
   const month = parseMonth((await searchParams).month, today);
-  const [s, { data: shareRows }, { data: depRows }, { data: bazarRows }] = await Promise.all([
+  const [s, { data: shareRows }, { data: depRows }, { data: bazarRows }, opening] = await Promise.all([
     getMonthSummary(supabase, mess.id, month),
     // for the Excel export: every bill share, payment and bazar entry of the month
     supabase
@@ -42,6 +42,7 @@ export default async function ReportPage({
       .lte("date", monthEnd(month))
       .order("date"),
     supabase.from("bazar_entries").select("date, amount, items, shopper_id").eq("mess_id", mess.id).gte("date", month).lte("date", monthEnd(month)).order("date"),
+    getOpening(supabase, mess.id),
   ]);
   type ShareRow = { member_id: string; amount: number; fixed_cost: { title: string } | null };
   const shares = (shareRows ?? []) as unknown as ShareRow[];
@@ -53,7 +54,6 @@ export default async function ReportPage({
   const sum = (k: "meals" | "meal_cost" | "fixed_share" | "deposits" | "carry_in" | "balance") =>
     s.members.reduce((a, m) => a + m[k], 0);
 
-  const opening = await getOpening(supabase, mess.id);
   const carryHead = opening.month === month ? t("opening.line") : t("report.carryIn");
   const headers = [t("common.member"), t("nav.meals"), t("report.mealCost"), t("report.fixedShare"), t("report.deposited"), carryHead, t("report.balance")];
   // laid out like the paper/Excel sheet: one row per person with every bill, then payments, then the bazar list

@@ -59,5 +59,7 @@ export async function changeEmail(_: ActionResult, fd: FormData): Promise<Action
   }
   const { error } = await admin.auth.admin.updateUserById(user.id, { email, email_confirm: true });
   if (error) return { error: /already|registered|exists/i.test(error.message) ? "LOGIN_TAKEN" : toErrorKey(error) };
+  // get a fresh login token so the new email shows straight away
+  await supabase.auth.refreshSession();
   return done({ message: "profile.emailSaved" });
 }

@@ -28,22 +28,18 @@ type Kitchen = {
 export default async function KitchenPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { supabase } = await requireUser();
-  const cook = await getCook();
+  const [{ supabase }, cook] = await Promise.all([requireUser(), getCook()]);
   if (!cook) return redirect({ href: "/dashboard", locale });
   const t = await getTranslations();
 
   const today = todayDhaka();
-  const { data, error } = await supabase.rpc("kitchen_day", { p_mess: cook.mess_id, p_date: today });
+  const [{ data, error }, { data: open }] = await Promise.all([
+    supabase.rpc("kitchen_day", { p_mess: cook.mess_id, p_date: today }),
+    // items khala already asked for that nobody has bought yet (shown with ⏳ on her buttons)
+    supabase.from("bazar_needs").select("item").eq("mess_id", cook.mess_id).eq("status", "open").not("item", "is", null),
+  ]);
   if (error) throw new Error(`Could not load the kitchen: ${error.message}`);
   const k = data as Kitchen;
-  // items khala already asked for that nobody has bought yet (shown with ⏳ on her buttons)
-  const { data: open } = await supabase
-    .from("bazar_needs")
-    .select("item")
-    .eq("mess_id", cook.mess_id)
-    .eq("status", "open")
-    .not("item", "is", null);
   const kinds: MealKind[] = k.breakfast_enabled ? ["breakfast", "lunch", "dinner"] : ["lunch", "dinner"];
   const now = Date.now();
   // cutoff = 00:00 of the day in Dhaka (UTC+6) + minutes

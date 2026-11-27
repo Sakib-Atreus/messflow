@@ -50,5 +50,8 @@ export async function resetPassword(userId: string, password?: string) {
 export async function setBlocked(userId: string, blocked: boolean) {
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: blocked ? "876000h" : "none" });
-  return error ? { error: "UNKNOWN" as ErrorKey } : { ok: true };
+  if (error) return { error: "UNKNOWN" as ErrorKey };
+  // the app reads this flag on every page, so the block works at once (the ban stops new sign-ins)
+  await admin.from("profiles").update({ blocked }).eq("id", userId);
+  return { ok: true };
 }

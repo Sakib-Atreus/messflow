@@ -20,7 +20,7 @@ The same codebase serves all three, so a fix or update reaches every user instan
 
 | Layer | Choice |
 |---|---|
-| Framework | **Next.js 15** (App Router) + TypeScript |
+| Framework | **Next.js 16** (App Router) + TypeScript |
 | UI | Tailwind CSS (small custom components), Bangla font: *Hind Siliguri* |
 | Database, Auth, Storage | **Supabase** (Postgres + Row Level Security) |
 | Hosting | **Vercel** Hobby |

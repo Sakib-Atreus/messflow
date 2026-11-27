@@ -34,11 +34,12 @@ export default async function MembersPage({
   setRequestLocale(locale);
   const openOpening = (await searchParams).opening === "1";
   const { supabase, mess, me, can, isManager } = await getContext();
-  const opening = await getOpening(supabase, mess.id);
+  const openingP = getOpening(supabase, mess.id); // loads together with everything below
   const canManage = can("members");
   const t = await getTranslations();
   const month = monthStart(todayDhaka());
-  const [members, { data: roleRows }, { data: joinRows }, { data: billRows }, summary, logins, avatarRows] = await Promise.all([
+  const [opening, members, { data: roleRows }, { data: joinRows }, { data: billRows }, summary, logins, avatarRows] = await Promise.all([
+    openingP,
     getMembers(supabase, mess.id),
     supabase.from("mess_roles").select("id, mess_id, name, permissions").eq("mess_id", mess.id).order("name"),
     canManage

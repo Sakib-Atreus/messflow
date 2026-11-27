@@ -5,8 +5,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** Things waiting for this person, keyed by the page where they're handled. */
 export type Pending = { "/members": number; "/deposits": number; "/admin": number; "/meals": number };
 
-export const getPending = cache(
-  async (supabase: SupabaseClient, messId: string | null, can: { members: boolean; deposits: boolean; superAdmin: boolean; manager?: boolean }): Promise<Pending> => {
+/** Cached per request on plain values, so the layout and the page share one lookup. */
+export function getPending(supabase: SupabaseClient, messId: string | null, can: { members: boolean; deposits: boolean; superAdmin: boolean; manager?: boolean }) {
+  return pendingCached(supabase, messId, can.members, can.deposits, can.superAdmin, !!can.manager);
+}
+
+const pendingCached = cache(
+  async (supabase: SupabaseClient, messId: string | null, canMembers: boolean, canDeposits: boolean, superAdmin: boolean, manager: boolean): Promise<Pending> => {
+    const can = { members: canMembers, deposits: canDeposits, superAdmin, manager };
     const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
     const [members, deposits, admin, cooks] = await Promise.all([
       can.members && messId

@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Camera, Trash2 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { setAvatar } from "@/lib/actions/profile";
-import { createBrowserSupabase } from "@/lib/supabase/client";
 import { useFeedback } from "./feedback";
 import { Avatar, btn, Spinner } from "./ui";
 
@@ -29,7 +28,8 @@ export function AvatarUpload({ userId, name, current }: { userId: string; name: 
   const input = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState(current);
   const [busy, setBusy] = useState(false);
-  const supabase = createBrowserSupabase();
+  // the upload client loads only when a photo is picked or removed (keeps the page light)
+  const storage = async () => (await import("@/lib/supabase/client")).createBrowserSupabase().storage.from("avatars");
   const pathOf = (url: string | null) => url?.split("/storage/v1/object/public/avatars/")[1] ?? null;
 
   const upload = async (file: File) => {
@@ -37,13 +37,14 @@ export function AvatarUpload({ userId, name, current }: { userId: string; name: 
     try {
       const blob = await toSmallSquare(file);
       const path = `${userId}/${Date.now()}.webp`;
-      const { error } = await supabase.storage.from("avatars").upload(path, blob, { contentType: "image/webp", upsert: true });
+      const bucket = await storage();
+      const { error } = await bucket.upload(path, blob, { contentType: "image/webp", upsert: true });
       if (error) throw error;
-      const url = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      const url = bucket.getPublicUrl(path).data.publicUrl;
       const r = await setAvatar(url);
       if (r.error) throw new Error(tErr(r.error));
       const old = pathOf(preview);
-      if (old) await supabase.storage.from("avatars").remove([old]); // tidy up the previous picture
+      if (old) await bucket.remove([old]); // tidy up the previous picture
       setPreview(url);
       toast(t("photoSaved"));
       router.refresh();
@@ -60,7 +61,7 @@ export function AvatarUpload({ userId, name, current }: { userId: string; name: 
     setBusy(true);
     const old = pathOf(preview);
     const r = await setAvatar(null);
-    if (!r.error && old) await supabase.storage.from("avatars").remove([old]);
+    if (!r.error && old) await (await storage()).remove([old]);
     setBusy(false);
     if (r.error) return toast(tErr(r.error), "error");
     setPreview(null);

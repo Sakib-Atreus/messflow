@@ -39,20 +39,20 @@ export default async function MealsPage({
   // khala's leave: this month so far, the next month ahead, the calendar month and the chosen day
   const leaveFrom = [monthStart(today), calMonth, day].sort()[0];
   const leaveTo = [addDays(today, 31), calEnd, day].sort()[2];
-  const leaves = await getLeaves(supabase, mess.id, leaveFrom, leaveTo);
-  const closed = closedByLeave(leaves);
-  const upcoming = leaves.filter((l) => l.date >= today);
-  const pendingOffers = upcoming.reduce((n, l) => n + l.offers.filter((o) => o.status === "pending").length, 0);
-  const locked = (date: string, k: (typeof kinds)[number]) => !isStaff && (isPastCutoff(date, mess[`${k}_cutoff`]) || closed(date, k));
   const gridStart = addDays(calMonth, -((new Date(`${calMonth}T00:00:00Z`).getUTCDay() + 1) % 7));
   const gridEnd = addDays(calEnd, (5 - new Date(`${calEnd}T00:00:00Z`).getUTCDay() + 7) % 7);
 
-  const [members, dayMeals, myMonth, { data: menu }] = await Promise.all([
+  const [leaves, members, dayMeals, myMonth, { data: menu }] = await Promise.all([
+    getLeaves(supabase, mess.id, leaveFrom, leaveTo),
     getMembers(supabase, mess.id),
     getMealsBetween(supabase, mess.id, day, day),
     supabase.from("meals").select("*").eq("member_id", me.id).gte("date", calMonth).lte("date", calEnd),
     supabase.from("meal_menus").select("breakfast, lunch, dinner, note").eq("mess_id", mess.id).eq("date", day).maybeSingle(),
   ]);
+  const closed = closedByLeave(leaves);
+  const upcoming = leaves.filter((l) => l.date >= today);
+  const pendingOffers = upcoming.reduce((n, l) => n + l.offers.filter((o) => o.status === "pending").length, 0);
+  const locked = (date: string, k: (typeof kinds)[number]) => !isStaff && (isPastCutoff(date, mess[`${k}_cutoff`]) || closed(date, k));
   const weekdays = [6, 0, 1, 2, 3, 4, 5].map((d) => fmtDate(locale, `2026-11-${22 + d}`, { weekday: "short" }));
   const calendarDays: CalendarDay[] = [];
   for (let d = gridStart; d <= gridEnd; d = addDays(d, 1)) {

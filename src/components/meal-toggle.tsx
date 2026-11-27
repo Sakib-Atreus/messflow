@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { setMeal, setMealHalf } from "@/lib/actions/mess";
 import { fmtNumber } from "@/lib/format";
@@ -27,7 +27,12 @@ export function MealToggle({
   const { toast } = useFeedback();
   const [val, setVal] = useState(on);
   const [pending, start] = useTransition();
-  useEffect(() => setVal(on), [on]);
+  // follow the server value when it changes (e.g. after someone else edits it)
+  const [seen, setSeen] = useState(on);
+  if (seen !== on) {
+    setSeen(on);
+    setVal(on);
+  }
 
   return (
     <button
@@ -78,7 +83,12 @@ export function GuestStepper({
   const locale = useLocale();
   const [val, setVal] = useState(count);
   const [pending, start] = useTransition();
-  useEffect(() => setVal(count), [count]);
+  // follow the server value when it changes (e.g. after someone else edits it)
+  const [seen, setSeen] = useState(count);
+  if (seen !== count) {
+    setSeen(count);
+    setVal(count);
+  }
 
   const change = (delta: number) => {
     const next = Math.max(0, Math.min(20, val + delta));
@@ -113,7 +123,12 @@ export function HalfToggle({
   const { toast } = useFeedback();
   const [val, setVal] = useState(half);
   const [pending, start] = useTransition();
-  useEffect(() => setVal(half), [half]);
+  // follow the server value when it changes (e.g. after someone else edits it)
+  const [seen, setSeen] = useState(half);
+  if (seen !== half) {
+    setSeen(half);
+    setVal(half);
+  }
   return (
     <button
       type="button"

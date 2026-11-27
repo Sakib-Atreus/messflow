@@ -22,15 +22,12 @@ export default async function AppLayout({
   setRequestLocale(locale);
   const { supabase, mess, me, memberships, perms, isManager, isSuperAdmin, isVirtual, can, profile } = await getContext();
   const t = await getTranslations();
-  // fill in any days the nightly job missed (idempotent, cheap)
-  // also roll the weekly bazar-duty plan forward (both are idempotent and cheap)
-  await Promise.all([
+  // all at once: fill in any days the nightly job missed, roll the weekly bazar-duty plan and repeating
+  // bills forward (all idempotent and cheap), plus the bell counts and the notification inbox
+  const [, , , pending, { data: inboxRows }] = await Promise.all([
     supabase.rpc("ensure_meals", { p_mess: mess.id }),
     supabase.rpc("ensure_weekly_duty", { p_mess: mess.id }),
     supabase.rpc("ensure_recurring_bills", { p_mess: mess.id }),
-  ]);
-
-  const [pending, { data: inboxRows }] = await Promise.all([
     getPending(supabase, mess.id, { members: can("members"), deposits: can("deposits"), superAdmin: isSuperAdmin, manager: isManager }),
     supabase.from("notifications").select("id, title, body, url, created_at, read_at").order("created_at", { ascending: false }).limit(15),
   ]);

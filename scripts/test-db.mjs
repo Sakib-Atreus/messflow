@@ -13,7 +13,7 @@ const db = new PGlite();
 await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema auth;
-  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}', raw_app_meta_data jsonb default '{}');
+  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}', raw_app_meta_data jsonb default '{}', banned_until timestamptz);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   grant usage on schema auth to authenticated, service_role; grant execute on function auth.uid() to public;
   create schema cron; create function cron.schedule(a text, b text, c text) returns int language sql as $$ select 1 $$;
@@ -71,6 +71,7 @@ await throws('requester cannot self-approve', () => as(B, `select review_join_re
 await as(A, `select review_join_request($1, true)`, [jr]);
 ok('B joined', (await as(B, `select count(*)::int n from mess_members`)).rows[0].n === 2);
 await throws('profile flags are protected', () => as(B, `update profiles set is_super_admin = true where id = $1`, [B]), 'permission denied');
+await throws('a blocked user cannot unblock themselves', () => as(B, `update profiles set blocked = false where id = $1`, [B]), 'permission denied');
 await as(B, `update profiles set locale = 'en' where id = $1`, [B]);
 ok('profile locale still editable', (await as(B, `select locale from profiles where id=$1`, [B])).rows[0].locale === 'en');
 ok('temp account flagged', (await as(D, `select must_change_password m, username u from profiles where id=$1`, [D])).rows[0].m === true);

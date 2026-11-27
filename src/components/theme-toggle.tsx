@@ -31,6 +31,7 @@ const ICON = { light: Sun, dark: Moon, system: Monitor };
 function useTheme() {
   const [theme, setTheme] = useState<Theme>("system");
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved theme is only known in the browser, after the page loads
     setTheme((document.documentElement.dataset.theme as Theme) || "system");
   }, []);
   const set = (t: Theme) => {

@@ -25,19 +25,19 @@ export default async function SheetPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { supabase, mess, me } = await getContext();
-  const opening = await getOpening(supabase, mess.id);
   const t = await getTranslations();
   const sp = await searchParams;
   const today = todayDhaka();
   const month = parseMonth(sp.month, today);
-  const carryLabel = opening.month === month ? t("opening.line") : t("person.previous");
   const tab: Tab = (TABS as readonly string[]).includes(sp.tab ?? "") ? (sp.tab as Tab) : "meals";
   const end = monthEnd(month);
   const lastDay = end < today ? end : today; // meals only count up to today
 
-  const [summary, members, { data: mealRows }, { data: bazarRows }, { data: billRows }, { data: payRows }] = await Promise.all([
+  const membersP = getMembers(supabase, mess.id);
+  const [opening, summary, members, { data: mealRows }, { data: bazarRows }, { data: billRows }, { data: payRows }, avatars] = await Promise.all([
+    getOpening(supabase, mess.id),
     getMonthSummary(supabase, mess.id, month),
-    getMembers(supabase, mess.id),
+    membersP,
     lastDay >= month
       ? supabase.from("meals").select("*").eq("mess_id", mess.id).gte("date", month).lte("date", lastDay)
       : Promise.resolve({ data: [] }),
@@ -51,7 +51,9 @@ export default async function SheetPage({
       .gte("date", month)
       .lte("date", end)
       .order("date"),
+    membersP.then((ms) => getAvatars(supabase, ms.map((m) => m.user_id))),
   ]);
+  const carryLabel = opening.month === month ? t("opening.line") : t("person.previous");
   type Bill = { id: string; title: string; amount: number; fixed_cost_shares: { member_id: string; amount: number }[] };
   type Pay = { id: string; member_id: string; date: string; amount: number; method: PaymentMethod; status: string };
   const bills = (billRows ?? []) as Bill[];
@@ -59,7 +61,6 @@ export default async function SheetPage({
   const meals = (mealRows ?? []) as Meal[];
   const bazar = (bazarRows ?? []) as { id: string; date: string; amount: number; items: string | null; shopper_id: string | null }[];
   const people = summary.members; // everyone in the mess that month, sorted by name
-  const avatars = await getAvatars(supabase, members.map((m) => m.user_id));
   const photoOf = (memberId: string) => {
     const uid = members.find((m) => m.id === memberId)?.user_id;
     return uid ? avatars.get(uid) ?? null : null;

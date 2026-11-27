@@ -8,23 +8,42 @@ import { PERMISSIONS, type Member, type Mess, type Permission, type Profile } fr
 
 export const MESS_COOKIE = "mf_mess";
 
-export const getSession = cache(async () => {
+/** The signed-in user, read from the login token. The token's signature is checked locally with the
+ *  project's public key (no network call), and the database checks it again on every query (RLS). */
+export type SessionUser = { id: string; email: string };
+
+const getClaimsUser = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const c = data?.claims;
+  const user: SessionUser | null = c?.sub ? { id: c.sub, email: typeof c.email === "string" ? c.email : "" } : null;
   return { supabase, user };
 });
 
-export const getProfile = cache(async () => {
-  const { supabase, user } = await getSession();
+const PROFILE_COLUMNS = "id, full_name, phone, locale, is_super_admin, must_change_password, username, avatar_url, blocked";
+
+const loadProfile = cache(async () => {
+  const { supabase, user } = await getClaimsUser();
   if (!user) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, full_name, phone, locale, is_super_admin, must_change_password, username, avatar_url")
-    .eq("id", user.id)
-    .single();
-  return (data as Profile | null) ?? null;
+  const first = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).single();
+  let data = first.data;
+  // database not migrated yet (no "blocked" column): load the profile without it
+  if (first.error?.code === "42703") ({ data } = await supabase.from("profiles").select(PROFILE_COLUMNS.replace(", blocked", "")).eq("id", user.id).single());
+  return (data as (Profile & { blocked?: boolean }) | null) ?? null;
+});
+
+/** Logged-in user (null when signed out or blocked by the super admin). */
+export const getSession = cache(async () => {
+  const { supabase, user } = await getClaimsUser();
+  if (!user) return { supabase, user: null };
+  const profile = await loadProfile();
+  // a blocked account counts as signed out right away (its sign-in is banned too)
+  return { supabase, user: profile?.blocked ? null : user };
+});
+
+export const getProfile = cache(async () => {
+  const { user } = await getSession();
+  return user ? loadProfile() : null;
 });
 
 /** Logged-in user + profile, enforcing the first-login password change. */
@@ -52,13 +71,18 @@ const VIRTUAL_ID = "00000000-0000-0000-0000-000000000000";
 
 /** Current user + their active mess + what they may do there. Redirects when missing. */
 export const getContext = cache(async () => {
+  // the memberships query runs at the same time as the profile check (both only need the user id)
+  const claims = await getClaimsUser();
+  const membersQuery = claims.user
+    ? claims.supabase
+        .from("mess_members")
+        .select("*, mess:messes!mess_members_mess_id_fkey(*), mess_role:mess_roles(name, permissions)")
+        .eq("user_id", claims.user.id)
+        .order("created_at")
+        .then((r) => r)
+    : null;
   const { supabase, user, locale, profile, isSuperAdmin } = await requireUser();
-
-  const { data, error } = await supabase
-    .from("mess_members")
-    .select("*, mess:messes!mess_members_mess_id_fkey(*), mess_role:mess_roles(name, permissions)")
-    .eq("user_id", user.id)
-    .order("created_at");
+  const { data, error } = await membersQuery!;
   // a failed query must not look like "no mess" - that would bounce between dashboard and onboarding
   if (error) throw new Error(`Could not load your mess: ${error.message}`);
   const memberships = (data ?? []) as Membership[];

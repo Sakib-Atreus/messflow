@@ -27,7 +27,6 @@ export function MonthPicker({
 
   useEffect(() => {
     if (!open) return;
-    setYear(selY);
     const onDown = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDown);
@@ -49,7 +48,10 @@ export function MonthPicker({
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!open) setYear(selY);
+          setOpen(!open);
+        }}
         className={cn(btn.small, "min-w-36 justify-between border-transparent bg-transparent font-semibold hover:border-slate-300 dark:bg-transparent")}
       >
         <CalendarDays className="size-4 text-brand-600 dark:text-brand-400" />

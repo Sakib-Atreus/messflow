@@ -30,14 +30,15 @@ export default async function MemberDetails({
   const { locale, id } = await params;
   setRequestLocale(locale);
   const { supabase, mess, me } = await getContext();
-  const opening = await getOpening(supabase, mess.id);
   const t = await getTranslations();
   const today = todayDhaka();
   const month = parseMonth((await searchParams).month, today);
   const end = monthEnd(month);
 
-  const [members, summary, { data: shareRows }, { data: depRows }, { data: mealRows }, { data: bazarRows }] = await Promise.all([
-    getMembers(supabase, mess.id),
+  const membersP = getMembers(supabase, mess.id);
+  const [opening, members, summary, { data: shareRows }, { data: depRows }, { data: mealRows }, { data: bazarRows }, avatars] = await Promise.all([
+    getOpening(supabase, mess.id),
+    membersP,
     getMonthSummary(supabase, mess.id, month),
     supabase
       .from("fixed_cost_shares")
@@ -59,10 +60,11 @@ export default async function MemberDetails({
       .lte("date", end < today ? end : today)
       .order("date"),
     supabase.from("bazar_entries").select("date, amount, items").eq("shopper_id", id).gte("date", month).lte("date", end).order("date"),
+    membersP.then((ms) => getAvatars(supabase, [ms.find((m) => m.id === id)?.user_id ?? null])),
   ]);
   const person = members.find((m) => m.id === id);
   if (!person) notFound();
-  const personPhoto = person.user_id ? (await getAvatars(supabase, [person.user_id])).get(person.user_id) ?? null : null;
+  const personPhoto = person.user_id ? avatars.get(person.user_id) ?? null : null;
 
   const row = summary.members.find((m) => m.member_id === id);
   const meals = row?.meals ?? 0;

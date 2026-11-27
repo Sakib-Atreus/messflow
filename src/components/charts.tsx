@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocale } from "next-intl";
 import { fmtMoney, fmtNumber } from "@/lib/format";
 
@@ -341,7 +341,7 @@ export function WalletChart({
   const fc = forecast.map((f, i) => `${i ? "L" : "M"}${px(idx.get(f.key) ?? 0).toFixed(1)},${py(f.left).toFixed(1)}`).join("");
   const ticks = [top > 0 ? hi : 0, 0, ...(lo < 0 ? [lo] : [])].filter((v, i, a) => a.indexOf(v) === i);
   const labelEvery = Math.ceil(n / Math.max(Math.floor(plotW / 40), 1));
-  const clipId = useMemo(() => `w${Math.random().toString(36).slice(2, 8)}`, []);
+  const clipId = `w${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

@@ -7,7 +7,6 @@ import { Mic, Send, Square, Trash2 } from "lucide-react";
 import { useFeedback } from "@/components/feedback";
 import { btn, cn, inputClass, Spinner } from "@/components/ui";
 import { sendNeeds } from "@/lib/actions/needs";
-import { createBrowserSupabase } from "@/lib/supabase/client";
 import { NEED_ITEMS } from "@/lib/needs";
 import type { ActionResult } from "@/lib/errors";
 
@@ -78,6 +77,8 @@ export function NeedsPanel({ messId, pending }: { messId: string; pending: strin
       if (voice) {
         const ext = voice.type.includes("mp4") ? "m4a" : voice.type.includes("ogg") ? "ogg" : "webm";
         voicePath = `${messId}/${Date.now()}.${ext}`;
+        // the upload client loads only when there is a voice message (keeps this page light)
+        const { createBrowserSupabase } = await import("@/lib/supabase/client");
         const { error } = await createBrowserSupabase().storage.from("voice").upload(voicePath, voice.blob, { contentType: voice.type });
         if (error) return toast(t("uploadFailed"), "error");
       }

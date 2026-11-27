@@ -11,7 +11,13 @@ export function MessSwitcher({ current, options }: { current: string; options: {
     <select
       value={current}
       disabled={pending}
-      onChange={(e) => start(() => switchMess(e.target.value))}
+      // then a full reload: every page and the page memory start fresh for the new mess
+      onChange={(e) =>
+        start(async () => {
+          await switchMess(e.target.value);
+          window.location.reload();
+        })
+      }
       className="max-w-48 truncate rounded-md bg-transparent font-semibold"
     >
       {options.map((o) => (

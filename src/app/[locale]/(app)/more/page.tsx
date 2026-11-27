@@ -15,9 +15,11 @@ export default async function MorePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const { supabase, me, mess, user, perms, isManager, isSuperAdmin, can, profile: profileRow } = await getContext();
-  const badges = await getPending(supabase, mess.id, { members: can("members"), deposits: can("deposits"), superAdmin: isSuperAdmin, manager: isManager });
+  const [badges, { data: profile }] = await Promise.all([
+    getPending(supabase, mess.id, { members: can("members"), deposits: can("deposits"), superAdmin: isSuperAdmin, manager: isManager }),
+    supabase.from("profiles").select("notify_prefs").eq("id", user.id).single(),
+  ]);
   const t = await getTranslations();
-  const { data: profile } = await supabase.from("profiles").select("notify_prefs").eq("id", user.id).single();
   const prefs = { ...DEFAULT_PREFS, ...((profile?.notify_prefs ?? {}) as Partial<NotifyPrefs>) };
 
   return (

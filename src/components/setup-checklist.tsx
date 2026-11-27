@@ -15,6 +15,7 @@ export function SetupChecklist({ messId, steps }: { messId: string; steps: Setup
   const [hidden, setHidden] = useState(true); // avoid a flash before we know
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage is only readable after the page loads
       setHidden(localStorage.getItem(storageKey) === "1");
     } catch {
       setHidden(false);

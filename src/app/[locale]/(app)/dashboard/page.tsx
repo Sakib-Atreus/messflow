@@ -33,7 +33,10 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const kinds = mealKinds(mess);
   const tomorrow = addDays(today, 1);
 
-  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed, { data: menuRow }] = await Promise.all([
+  const needSetup = isManager && !isVirtual;
+  // everything loads at the same time; photos follow the member list as soon as it arrives
+  const membersP = getMembers(supabase, mess.id);
+  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed, { data: menuRow }, leaves, opening, setupCounts, avatars] = await Promise.all([
     getMonthSummary(supabase, mess.id, month),
     getMealsBetween(supabase, mess.id, month, today),
     can("deposits")
@@ -42,7 +45,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
     can("members")
       ? supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("mess_id", mess.id).eq("status", "pending")
       : Promise.resolve({ count: 0 }),
-    getMembers(supabase, mess.id),
+    membersP,
     // who owes + whether a push can reach them (service role: reads other people's subscriptions)
     can("deposits") ? getDueReach(createAdminClient(), mess) : Promise.resolve([]),
     supabase.from("bazar_roster").select("date, member_id, done").eq("mess_id", mess.id).in("date", [today, tomorrow]),
@@ -58,20 +61,24 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
     supabase.from("bazar_entries").select("date, amount").eq("mess_id", mess.id).gte("date", month).lte("date", today),
     supabase.from("fixed_costs").select("category, amount").eq("mess_id", mess.id).eq("month", month),
     supabase.from("meal_menus").select("breakfast, lunch, dinner").eq("mess_id", mess.id).eq("date", today).maybeSingle(),
+    getLeaves(supabase, mess.id, today, tomorrow),
+    getOpening(supabase, mess.id),
+    // first-time setup for managers: which steps are already done
+    needSetup
+      ? Promise.all([
+          supabase.from("weekly_duty").select("id", { count: "exact", head: true }).eq("mess_id", mess.id),
+          supabase.from("bazar_roster").select("id", { count: "exact", head: true }).eq("mess_id", mess.id).gte("date", today),
+          supabase.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", me.user_id ?? ""),
+        ])
+      : null,
+    membersP.then((ms) => getAvatars(supabase, ms.map((m) => m.user_id))),
   ]);
   const todayMenu = menuLine(menuRow as Menu, kinds, (k) => t(`meal.${k}`), locale);
-  const leaves = await getLeaves(supabase, mess.id, today, tomorrow);
   const closed = closedByLeave(leaves);
-  const opening = await getOpening(supabase, mess.id);
   const carryLabel = opening.month === month ? t("opening.line") : t("report.carryIn");
   const todayMeals = monthMeals.filter((m) => m.date === today);
-  // first-time setup for managers: which steps are already done
-  const setup = isManager && !isVirtual
-    ? await Promise.all([
-        supabase.from("weekly_duty").select("id", { count: "exact", head: true }).eq("mess_id", mess.id),
-        supabase.from("bazar_roster").select("id", { count: "exact", head: true }).eq("mess_id", mess.id).gte("date", today),
-        supabase.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", me.user_id ?? ""),
-      ]).then(([weekly, roster, push]) => [
+  const setup = setupCounts
+    ? (([weekly, roster, push]) => [
         { key: "members", done: members.filter((m) => m.status === "active").length >= 2, href: "/members" },
         { key: "logins", done: members.some((m) => m.user_id && m.id !== me.id), href: "/members" },
         { key: "bills", done: (fixed.data ?? []).length > 0, href: "/costs" },
@@ -79,9 +86,8 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
         { key: "notify", done: (push.count ?? 0) > 0, href: "/more" },
         // old notebook balances: optional, and only until the first month is closed
         ...(opening.locked ? [] : [{ key: "opening", done: opening.amounts.size > 0, href: "/members?opening=1", optional: true }]),
-      ])
+      ])(setupCounts)
     : null;
-  const avatars = await getAvatars(supabase, members.map((m) => m.user_id));
   const photoOf = (memberId: string) => {
     const uid = members.find((m) => m.id === memberId)?.user_id;
     return uid ? avatars.get(uid) ?? null : null;
