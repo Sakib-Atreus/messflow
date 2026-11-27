@@ -218,8 +218,8 @@ The Android app needs no new build: it loads the website, so it updates with eve
 
 | Job | Runs | Does |
 |---|---|---|
-| `pg_cron` daily meals | 00:05 Dhaka | Creates each active member's meals for the day |
-| Vercel cron `/api/cron/daily` | 00:10 Dhaka | Backup for the above; also keeps the free Supabase project from pausing |
+| `pg_cron` daily meals | 00:05 Bangladesh time | Creates each active member's meals for the day |
+| Vercel cron `/api/cron/daily` | 00:10 Bangladesh time | Backup for the above; also keeps the free Supabase project from pausing |
 | `pg_cron` → `/api/cron/notify` | Every 10 minutes | Reminders below, weekly bazar duty, repeating bills for the new month |
 
 Reminders (times and on/off are set per mess in **Settings**):
@@ -374,5 +374,5 @@ re-run it the next day (Dependabot also retries by itself).
 ---
 
 <div align="center">
-Made for messes in Dhaka 🇧🇩
+Made for messes in Bangladesh 🇧🇩
 </div>

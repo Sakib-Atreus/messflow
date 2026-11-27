@@ -1,4 +1,4 @@
-# MessFlow - Dhaka Mess Management App
+# MessFlow - Mess Management App for Bangladesh
 
 A bilingual (বাংলা / English) app for managing a bachelor mess: automatic daily meals, bazar costs, fixed costs, member deposits, live balances, and monthly closing. It runs on the web, Android, and iPhone and costs ৳0 to run.
 
@@ -65,7 +65,7 @@ The same codebase serves all three, so a fix or update reaches every user instan
 - A member who leaves mid-month is settled up to the leave date.
 
 ### 4.2 Automatic daily meals ⭐
-- Every night at **00:05 Dhaka time**, a meal row is created for every active member from their default pattern, so nobody has to enter meals.
+- Every night at **00:05 Bangladesh time**, a meal row is created for every active member from their default pattern, so nobody has to enter meals.
 - Members turn individual meals **on/off before the cutoff**:
   - Breakfast cutoff (default: previous night 11 PM)
   - Lunch cutoff (default 10:00 AM)
@@ -181,7 +181,7 @@ audit_log           (id, mess_id, actor_id, table_name, row_id,
 - Closed months are read-only (enforced by a trigger).
 
 **DB functions:**
-- `generate_daily_meals(date)`: run by `pg_cron` at 18:05 UTC (= 00:05 Dhaka).
+- `generate_daily_meals(date)`: run by `pg_cron` at 18:05 UTC (= 00:05 Bangladesh time).
 - `month_summary(mess_id, year_month)`: live meal rate and balances.
 - `close_month(mess_id, year_month)`: freezes bills, creates the carry-forward.
 - `set_opening_balances(mess_id, rows)`: manager only, first month only (`OPENING_LOCKED` after a month is closed); a 0 amount removes the entry.
@@ -274,7 +274,7 @@ messflow/
 
 ## 8. Deployment (all free)
 
-1. Create a **Supabase** project (region: Singapore, the closest to Dhaka) and run the migrations (`pnpm db:migrate:prod`). They also set up `pg_cron`, the storage buckets and the daily meal job.
+1. Create a **Supabase** project (region: Singapore, the closest to Bangladesh) and run the migrations (`pnpm db:migrate:prod`). They also set up `pg_cron`, the storage buckets and the daily meal job.
 2. Push the code to **GitHub** and import it into **Vercel** (region `sin1` is set in `vercel.json`).
 3. Add environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
 4. Supabase → Authentication → URL Configuration (site URL + redirect), and `private.config` (`notify_url`, `cron_secret`) for the 10-minute reminders. See README.
