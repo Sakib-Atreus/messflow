@@ -153,7 +153,7 @@ by Row Level Security, so the data stays consistent no matter which client write
 
 ## Getting started (local)
 
-**Requirements:** Node.js 20+, [pnpm](https://pnpm.io), and a free Supabase project.
+**Requirements:** Node.js 20.9+ (22 recommended), [pnpm](https://pnpm.io), and a free Supabase project.
 
 ```bash
 git clone <your-fork-url> messflow
@@ -203,6 +203,16 @@ pnpm dev                     # http://localhost:3000
    ```
 3. Create your super admin with `pnpm admin:create` (run locally against the same database), log in, and create your first mess and manager from the Admin panel.
 
+### Updating the live site
+When new code includes files in `supabase/migrations/`, the live database must get them **before** the code goes live:
+
+1. `pnpm db:backup`: a safety copy of the live data
+2. `pnpm db:migrate:prod`: applies only the new migrations (already applied ones are skipped, so it's safe to run again)
+3. `git push`: GitHub runs the checks (Actions → CI should be green ✓) and Vercel deploys
+4. Open the live site and try what changed
+
+The Android app needs no new build: it loads the website, so it updates with every deploy.
+
 ## Notifications and scheduled jobs
 
 | Job | Runs | Does |
@@ -234,6 +244,10 @@ Each member turns notifications on once per device under **More → Notification
 | Android (Chrome) | Open the site → ⋮ → **Install app** |
 | iPhone (Safari) | Share → **Add to Home Screen** (push needs iOS 16.4+ and opening from the Home Screen) |
 | Android APK | Paste your deployed URL into [PWABuilder](https://www.pwabuilder.com) → Android to generate an `.apk` / `.aab` |
+
+**Notifications** arrive in the phone's notification bar like any chat app, even when MessFlow is closed. Each person turns
+them on once: **More → Notifications → Allow**. If they come late on Xiaomi, Oppo, Vivo or Realme phones, set MessFlow
+(or Chrome) to *No restrictions* in the phone's battery settings.
 
 ## Project structure
 
