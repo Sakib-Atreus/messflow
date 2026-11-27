@@ -1,3 +1,8 @@
 allowBuilds:
   '@parcel/watcher': false
   '@swc/core': false
+
+# Supply-chain safety: never install a package version that was published less than 1 day ago (minutes).
+# A hijacked npm release is usually caught and removed within hours, so this skips that window.
+# Versions already in pnpm-lock.yaml install as before.
+minimumReleaseAge: 1440

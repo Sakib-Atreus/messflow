@@ -10,6 +10,9 @@ updates:
       time: "09:00"
       timezone: Asia/Dhaka
     open-pull-requests-limit: 5
+    # wait until a new version is 3 days old before proposing it (security fixes don't wait)
+    cooldown:
+      default-days: 3
     groups:
       # small updates together in one pull request
       minor-and-patch:

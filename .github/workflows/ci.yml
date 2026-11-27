@@ -1,5 +1,5 @@
 # Runs on every push and pull request: typecheck, lint, the database tests (an in-memory Postgres,
-# no real database or secrets needed) and a production build. A red ❌ on GitHub means something
+# no real database or secrets needed) and a production build. A failed check on GitHub means something
 # would break, before Vercel deploys it.
 name: CI
 

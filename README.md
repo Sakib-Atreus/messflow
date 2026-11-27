@@ -43,6 +43,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - [Project structure](#project-structure)
 - [Scripts](#scripts)
 - [Testing](#testing)
+- [Dependency updates (Dependabot)](#dependency-updates-dependabot)
 
 ## Screenshots
 
@@ -329,9 +330,42 @@ pnpm test:e2e all                       # also every page × role × screen, and
 Use another server with `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Screenshots go to `tests/e2e/.output/`.
 
 **Automatic checks:** every push and pull request runs typecheck, lint, the database tests and a production build on
-GitHub Actions (`.github/workflows/ci.yml`). Dependabot (`.github/dependabot.yml`) opens pull requests for security
-fixes right away and for small updates every Friday; merge them when the checks are green. Major upgrades
-(e.g. a new Next.js major) are left for a planned upgrade.
+GitHub Actions (`.github/workflows/ci.yml`). A failed check means the change would break something; fix it before merging.
+
+## Dependency updates (Dependabot)
+
+[Dependabot](https://docs.github.com/en/code-security/dependabot) is GitHub's own built-in service (not a third-party
+app). It does two jobs for this repo:
+
+- **Security alerts:** it compares the packages in `pnpm-lock.yaml` with GitHub's advisory database and lists problems
+  under the repo's **Security → Dependabot** tab (and in the message after a `git push`).
+- **Update pull requests** (`.github/dependabot.yml`): a fix for a security alert right away, and small (minor/patch)
+  updates once a week, grouped into one pull request. Each one lives on its own `dependabot/...` branch, which Dependabot
+  deletes after the pull request is merged or closed. Major upgrades (e.g. a new Next.js major) are not proposed;
+  those are done as a planned upgrade.
+
+**Why it's safe:** it never changes `main` by itself (you merge), it only edits `package.json` and `pnpm-lock.yaml`, and
+GitHub runs its pull requests without access to the repo's secrets (the checks don't use any anyway).
+
+**The one real risk, for any update:** very rarely an attacker takes over a popular npm package and publishes a bad
+version. Protection here:
+
+- you merge by hand; auto-merge is off
+- the checks run on every update before you merge
+- big version jumps are skipped
+- **new versions must be a few days old:** Dependabot waits 3 days before proposing a normal update (`cooldown`; security
+  fixes don't wait), and pnpm refuses any version published less than 1 day ago (`minimumReleaseAge: 1440` in
+  `pnpm-workspace.yaml`), so a hijacked release is usually caught and removed before it can reach this project
+
+**What to do with a Dependabot pull request:**
+
+1. Wait for the green ✓ (the checks), and look at which packages changed.
+2. Merge it on GitHub.
+3. On your computer: `git pull && pnpm install`. If `playwright` was updated, also run `pnpm exec playwright install chromium`.
+4. Before a deploy with bigger changes (React, Next.js, next-intl), run the browser tests: `pnpm test:e2e`.
+
+A security pull request can fail to install for up to a day if the fix was published only hours ago (the 1-day rule);
+re-run it the next day (Dependabot also retries by itself).
 
 ## License
 
