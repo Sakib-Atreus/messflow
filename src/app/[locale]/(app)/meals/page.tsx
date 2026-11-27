@@ -97,7 +97,7 @@ export default async function MealsPage({
         action={
           isManager && (
             <div className="flex flex-wrap gap-2">
-            <Drawer label={t("menu.weekly")} title={t("menu.weeklyTitle")} icon="week" side={false} className={btn.small}>
+            <Drawer label={t("menu.weekly")} title={t("menu.weeklyTitle")} icon="week" side={false} wide className={btn.small}>
               <WeeklyMenuForm kinds={kinds} week={week} />
             </Drawer>
             <Drawer

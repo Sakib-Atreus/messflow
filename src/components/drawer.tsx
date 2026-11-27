@@ -12,10 +12,10 @@ const ICONS = { add: UserPlus, details: Info, chef: ChefHat, balance: Scale, wee
  * `side={false}`. Content stays mounted while open. `badge` shows a red count on the button.
  */
 export function Drawer({
-  label, title, icon, className, children, side = true, badge, defaultOpen = false,
+  label, title, icon, className, children, side = true, badge, defaultOpen = false, wide = false,
 }: {
   label: ReactNode; title: ReactNode; icon?: keyof typeof ICONS; className?: string; children: ReactNode;
-  side?: boolean; badge?: number; /** open straight away (e.g. arriving from a link) */ defaultOpen?: boolean;
+  side?: boolean; badge?: number; /** wider centred dialog on desktop */ wide?: boolean; /** open straight away (e.g. arriving from a link) */ defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const Icon = icon ? ICONS[icon] : null;
@@ -28,7 +28,7 @@ export function Drawer({
           <span className="grid min-w-5 place-items-center rounded-full bg-red-600 px-1.5 text-xs font-semibold leading-5 text-white">{badge}</span>
         )}
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title={title} side={side}>
+      <Modal open={open} onClose={() => setOpen(false)} title={title} side={side} wide={wide}>
         {open && children}
       </Modal>
     </>

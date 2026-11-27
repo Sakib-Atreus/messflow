@@ -10,8 +10,8 @@ import { cn } from "./ui";
  * centered box on wider screens, or a full-height panel on the right with `side`.
  */
 export function Modal({
-  open, onClose, title, children, side,
-}: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; side?: boolean }) {
+  open, onClose, title, children, side, wide,
+}: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; side?: boolean; /** a wider centred box on desktop (tables, weekly menu) */ wide?: boolean }) {
   const t = useTranslations("common");
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -29,7 +29,7 @@ export function Modal({
         "m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-3xl bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm dark:bg-slate-900 dark:text-slate-100",
         side
           ? "mf-side sm:mr-0 sm:ml-auto sm:mt-0 sm:h-dvh sm:max-h-dvh sm:max-w-lg sm:rounded-none sm:rounded-l-3xl"
-          : "sm:m-auto sm:max-w-lg sm:rounded-3xl",
+          : cn("sm:m-auto sm:rounded-3xl", wide ? "sm:max-w-2xl lg:max-w-4xl" : "sm:max-w-lg"),
       )}
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">

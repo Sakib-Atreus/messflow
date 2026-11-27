@@ -101,21 +101,30 @@ export async function WeeklyMenuForm({ kinds, week }: { kinds: MealKind[]; week:
   return (
     <ActionForm action={saveWeeklyMenu} reset={false}>
       <p className="text-sm text-slate-600 dark:text-slate-400">{t("menu.weeklyHelp")}</p>
+      {/* column headings on wider screens (on phones each box has its own label) */}
+      <div className="hidden gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:grid sm:grid-cols-[8rem_1fr]">
+        <span />
+        <div className={kinds.length === 3 ? "grid grid-cols-3 gap-2" : "grid grid-cols-2 gap-2"}>
+          {kinds.map((k) => <span key={k} className="px-1">{t(`meal.${k}`)}</span>)}
+        </div>
+      </div>
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {WEEK_ORDER.map((d) => (
-          <div key={d} data-weekday={d} className="grid gap-2 py-3 sm:grid-cols-[7rem_1fr] sm:items-center">
+          <div key={d} data-weekday={d} className="grid gap-2 py-3 sm:grid-cols-[8rem_1fr] sm:items-center">
             <div className="font-semibold">{dayName(d)}</div>
             <div className={kinds.length === 3 ? "grid gap-2 sm:grid-cols-3" : "grid gap-2 sm:grid-cols-2"}>
               {kinds.map((k) => (
-                <input
-                  key={k}
-                  name={`${d}_${k}`}
-                  maxLength={200}
-                  defaultValue={week.get(d)?.[k] ?? ""}
-                  placeholder={t(`meal.${k}`)}
-                  aria-label={`${dayName(d)} - ${t(`meal.${k}`)}`}
-                  className={inputClass}
-                />
+                <label key={k} className="grid grid-cols-[4.5rem_1fr] items-center gap-2 sm:block">
+                  <span className="text-sm text-slate-500 sm:hidden">{t(`meal.${k}`)}</span>
+                  <input
+                    name={`${d}_${k}`}
+                    maxLength={200}
+                    defaultValue={week.get(d)?.[k] ?? ""}
+                    placeholder={t(`meal.${k}`)}
+                    aria-label={`${dayName(d)} - ${t(`meal.${k}`)}`}
+                    className={inputClass}
+                  />
+                </label>
               ))}
             </div>
           </div>
