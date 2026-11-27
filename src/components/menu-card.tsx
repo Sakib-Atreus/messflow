@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CookingPot, Repeat } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { Card, Field, inputClass } from "@/components/ui";
+import { Card, cn, Field, inputClass } from "@/components/ui";
 import { saveMenu, saveWeeklyMenu } from "@/lib/actions/people";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
@@ -132,6 +132,44 @@ export async function WeeklyMenuForm({ kinds, week }: { kinds: MealKind[]; week:
       </div>
       <SubmitButton>{t("menu.weeklySave")}</SubmitButton>
     </ActionForm>
+  );
+}
+
+/** Members: this week's menu, Saturday → Friday, read-only. Today is highlighted, past days are faded. */
+export async function WeekMenuList({ days, kinds, today }: { days: { date: string; menu: DayMenu }[]; kinds: MealKind[]; today: string }) {
+  const t = await getTranslations();
+  const locale = await getLocale();
+  return (
+    <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+      {days.map(({ date, menu }) => {
+        const isToday = date === today;
+        return (
+          <li
+            key={date}
+            data-day={date}
+            className={cn(
+              "grid gap-1 py-3 sm:grid-cols-[9rem_1fr] sm:gap-3",
+              isToday && "-mx-3 rounded-xl bg-brand-50 px-3 dark:bg-brand-950/40",
+              date < today && "opacity-60",
+            )}
+          >
+            <div className="font-semibold">
+              {fmtDate(locale, date, { weekday: "long" })}
+              <span className="ml-1.5 text-sm font-normal text-slate-500">{fmtDate(locale, date, { day: "numeric", month: "short" })}</span>
+              {isToday && <span className="ml-2 rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">{t("menu.today")}</span>}
+            </div>
+            <dl className="space-y-0.5">
+              {kinds.map((k) => (
+                <div key={k} className="flex gap-2">
+                  <dt className="w-16 shrink-0 text-slate-500">{t(`meal.${k}`)}</dt>
+                  <dd className={menu?.[k] ? "font-medium" : "text-slate-400"}>{menu?.[k] ? translateMenu(menu[k], locale) : "-"}</dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

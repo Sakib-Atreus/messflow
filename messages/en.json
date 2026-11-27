@@ -861,7 +861,9 @@
     "weeklySaved": "Weekly menu saved - it repeats every week.",
     "fromWeekly": "Weekly: {dish}",
     "emptyUsesWeekly": "Empty boxes use the weekly menu; anything you write changes this day only.",
-    "weeklyShort": "weekly"
+    "weeklyShort": "weekly",
+    "thisWeek": "This week's menu",
+    "today": "Today"
   },
   "kitchen": {
     "title": "Today's cooking",
@@ -870,7 +872,9 @@
     "final": "Final - won't change",
     "mayChange": "May change until {time}",
     "leave": "Leave - no cooking",
-    "message": "A note for you, khala"
+    "message": "A note for you, khala",
+    "tomorrow": "Tomorrow",
+    "leaveShort": "Leave - no cooking"
   },
   "leave": {
     "title": "Khala's leave",

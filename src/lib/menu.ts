@@ -18,6 +18,18 @@ export async function getDayMenu(supabase: SupabaseClient, messId: string, date:
   return (data as DayMenu) ?? null;
 }
 
+/** Menus for each day from `from` to `to` (at most 14 days), in one call. */
+export async function getMenusBetween(supabase: SupabaseClient, messId: string, from: string, to: string): Promise<{ date: string; menu: DayMenu }[]> {
+  const { data } = await supabase.rpc("menus_between", { p_mess: messId, p_from: from, p_to: to });
+  return (data as { date: string; menu: DayMenu }[] | null) ?? [];
+}
+
+/** Saturday of the week that contains `date` (weeks run Saturday → Friday). */
+export const weekStartOf = (date: string) => {
+  const back = (weekdayOf(date) + 1) % 7;
+  return new Date(Date.parse(`${date}T00:00:00Z`) - back * 864e5).toISOString().slice(0, 10);
+};
+
 /** The whole weekly menu, by weekday number. */
 export async function getWeeklyMenu(supabase: SupabaseClient, messId: string): Promise<Map<number, WeekDishes>> {
   const { data } = await supabase.from("weekly_menus").select("weekday, breakfast, lunch, dinner").eq("mess_id", messId);

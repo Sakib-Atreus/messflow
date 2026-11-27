@@ -265,6 +265,7 @@ messflow/
 - [x] Backups: `pnpm db:backup` (full data + logins, restore tested), backup card in the admin panel, weekly + month-close reminders
 - [x] Opening balance from the old notebook (first month only, then locked)
 - [x] Weekly menu (Sat → Fri, repeats every week); a day's own menu wins meal by meal
+- [x] Members: "This week's menu" (read-only); khala's page: tomorrow's dishes (or her leave)
 - [ ] Manager handover
 
 ---

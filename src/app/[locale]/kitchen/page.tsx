@@ -8,7 +8,8 @@ import { ThemeButton } from "@/components/theme-toggle";
 import { cn, Logo } from "@/components/ui";
 import { signOut } from "@/lib/actions/auth";
 import { getCook, requireUser } from "@/lib/mess";
-import { todayDhaka } from "@/lib/dates";
+import { addDays, todayDhaka } from "@/lib/dates";
+import { getDayMenu } from "@/lib/menu";
 import { fmtDate, fmtNumber, fmtTime } from "@/lib/format";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
@@ -33,10 +34,14 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
   const t = await getTranslations();
 
   const today = todayDhaka();
-  const [{ data, error }, { data: open }] = await Promise.all([
+  const tomorrow = addDays(today, 1);
+  const [{ data, error }, { data: open }, tomorrowMenu, { data: tomorrowLeave }] = await Promise.all([
     supabase.rpc("kitchen_day", { p_mess: cook.mess_id, p_date: today }),
     // items khala already asked for that nobody has bought yet (shown with ⏳ on her buttons)
     supabase.from("bazar_needs").select("item").eq("mess_id", cook.mess_id).eq("status", "open").not("item", "is", null),
+    // tomorrow's dishes and leave, so khala can get ready
+    getDayMenu(supabase, cook.mess_id, tomorrow),
+    supabase.from("cook_leaves").select("meal").eq("mess_id", cook.mess_id).eq("date", tomorrow),
   ]);
   if (error) throw new Error(`Could not load the kitchen: ${error.message}`);
   const k = data as Kitchen;
@@ -125,6 +130,29 @@ export default async function KitchenPage({ params }: { params: Promise<{ locale
             </section>
           );
         })}
+
+        {(() => {
+          const off = new Set((tomorrowLeave ?? []).map((l) => l.meal as MealKind));
+          const lines = kinds
+            .map((kind) => ({ kind, text: off.has(kind) ? t("kitchen.leaveShort") : translateMenu(tomorrowMenu?.[kind], locale) }))
+            .filter((x) => x.text);
+          if (!lines.length) return null;
+          return (
+            <section data-tomorrow className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-5 dark:border-slate-700 dark:bg-slate-900/40">
+              <h2 className="text-lg font-semibold text-slate-600 dark:text-slate-300">
+                {t("kitchen.tomorrow")} · {fmtDate(locale, tomorrow, { weekday: "long" })}
+              </h2>
+              <dl className="mt-2 space-y-1.5 text-xl">
+                {lines.map(({ kind, text }) => (
+                  <div key={kind} className="flex gap-3">
+                    <dt className="w-20 shrink-0 text-slate-500">{t(`meal.${kind}`)}</dt>
+                    <dd className="font-semibold">{text}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          );
+        })()}
 
         <NeedsPanel messId={cook.mess_id} pending={(open ?? []).map((x) => x.item as string)} />
         <NeedsList supabase={supabase} messId={cook.mess_id} locale={locale} forCook />

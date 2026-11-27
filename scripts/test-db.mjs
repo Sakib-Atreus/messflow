@@ -426,6 +426,10 @@ await throws('anon cannot read summary', () => asRole('anon', '', `select month_
     ok('khala can read the weekly menu', (await as(cook, `select count(*)::int n from weekly_menus`)).rows[0].n === 2);
     await throws('khala cannot write the weekly menu', () => as(cook, `insert into weekly_menus(mess_id, weekday, lunch) values ($1, $2, 'x')`, [mess, (wd + 3) % 7]), 'row-level security');
   } else ok('khala test account available', false);
+  const wk = (await as(B, `select menus_between($1, $2::date, $2::date + 6) w`, [mess, day.d])).rows[0].w;
+  ok('a week of menus in one call (7 days, merged)', wk.length === 7 && wk[0].menu?.lunch === 'Polao, beef' && wk[1].menu?.lunch === 'Khichuri' && wk[2].menu === null, JSON.stringify(wk.map((x) => x.menu?.lunch ?? null)));
+  ok('outsider gets no menus for the week', (await as(X, `select menus_between($1, $2::date, $2::date + 6) w`, [mess, day.d])).rows[0].w.every((x) => x.menu === null));
+  ok('range is capped at 14 days', (await as(B, `select jsonb_array_length(menus_between($1, $2::date, $2::date + 400)) n`, [mess, day.d])).rows[0].n === 14);
   await throws('anon cannot read a day menu', () => asRole('anon', '', `select menu_for_day($1, $2::date)`, [mess, day.d]), 'permission denied');
   await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
   if (added && cook) await db.query(`delete from mess_cooks where user_id = $1`, [cook]);

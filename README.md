@@ -69,6 +69,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Half meals and guest meals, with a month calendar view
 - Daily menu ("what to cook") written by the manager and shown to everyone
 - Weekly menu: write Saturday → Friday once and it repeats every week; any single day can still be changed
+- Members can open this week's menu (Saturday → Friday); khala's page also shows tomorrow's dishes
 
 **Money**
 - Opening balance: when moving from a notebook, enter each person's old due or credit once (first month only)
