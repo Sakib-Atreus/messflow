@@ -266,6 +266,7 @@ messflow/
 - [x] Opening balance from the old notebook (first month only, then locked)
 - [x] Weekly menu (Sat → Fri, repeats every week); a day's own menu wins meal by meal
 - [x] Members: "This week's menu" (read-only); khala's page: tomorrow's dishes (or her leave)
+- [x] Automatic checks on GitHub (typecheck, lint, database tests, build), Dependabot security updates, browser tests in `tests/e2e/`
 - [ ] Manager handover
 
 ---

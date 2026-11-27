@@ -6,8 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { SwRegister } from "@/components/sw-register";
 import { FeedbackProvider } from "@/components/feedback";
-import { ThemeSync } from "@/components/theme-toggle";
-import { THEME_SCRIPT } from "@/lib/theme";
+import { ThemeScript, ThemeSync } from "@/components/theme-toggle";
 import "../globals.css";
 
 const font = Hind_Siliguri({
@@ -60,7 +59,7 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* runs before paint so the page never flashes the wrong theme */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <ThemeScript />
       </head>
       <body className={`${font.variable} font-sans antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider>

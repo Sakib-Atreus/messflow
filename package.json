@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:db": "node scripts/test-db.mjs",
+    "test:e2e": "node --env-file=.env.local scripts/e2e.mjs",
+    "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "db:reset-data": "node --env-file=.env.local scripts/reset-data.mjs",
@@ -34,7 +36,6 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "~0.3.16",
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19.3.0",
@@ -43,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "pg": "^8.23.1",
+    "playwright": "1.57.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

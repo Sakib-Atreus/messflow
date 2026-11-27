@@ -1,0 +1,24 @@
+# Security and version updates as pull requests. Each one runs the CI checks, so a green ✓ means it's
+# safe to merge. Security fixes (e.g. a Next.js or React advisory) come right away, outside this schedule.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: "09:00"
+      timezone: Asia/Dhaka
+    open-pull-requests-limit: 5
+    groups:
+      # small updates together in one pull request
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # big jumps (e.g. Next.js 17) need a planned upgrade, not an automatic one
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

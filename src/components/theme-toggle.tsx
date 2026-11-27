@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Monitor, Moon, Sun } from "lucide-react";
-import type { Theme } from "@/lib/theme";
+import { THEME_SCRIPT, type Theme } from "@/lib/theme";
 import { cn } from "./ui";
 
 declare global {
@@ -11,6 +11,20 @@ declare global {
     __setTheme?: (t: Theme) => void;
     __applyTheme?: () => void;
   }
+}
+
+const noSubscribe = () => () => {};
+
+/**
+ * The theme script for <head>. It's only output in the page the server sends: the browser runs it before
+ * the first paint, so the page never flashes the wrong theme. When React builds <head> again in the
+ * browser (switching language swaps the whole layout) a script there would never run, and React warns
+ * about it, so nothing is output then; ThemeSync below puts the theme back instead.
+ */
+export function ThemeScript() {
+  // true on the server and while the page is being hydrated, false for anything built later in the browser
+  const fromServer = useSyncExternalStore(noSubscribe, () => false, () => true);
+  return fromServer ? <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /> : null;
 }
 
 /**

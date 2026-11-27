@@ -12,5 +12,13 @@ export default defineConfig([
     files: ["src/app/**/page.tsx", "src/app/**/layout.tsx"],
     rules: { "react-hooks/purity": "off" },
   },
+  {
+    // browser tests are plain Node scripts (CommonJS), run with `pnpm test:e2e`
+    files: ["tests/e2e/**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unused-expressions": ["error", { allowTernary: true, allowShortCircuit: true }],
+    },
+  },
   globalIgnores(["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);

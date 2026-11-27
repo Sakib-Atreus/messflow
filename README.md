@@ -251,6 +251,8 @@ src/components/           UI components (forms, dialogs, charts, meal toggles…
 src/lib/actions/          Server actions (all writes)
 src/lib/                  Supabase clients, queries, dates, meal money, push and notification logic
 supabase/migrations/      Schema, RLS policies, Postgres functions, cron jobs
+tests/e2e/                Browser tests (pnpm test:e2e)
+.github/                  CI checks and Dependabot
 ```
 
 ## Scripts
@@ -259,8 +261,9 @@ supabase/migrations/      Schema, RLS policies, Postgres functions, cron jobs
 |---|---|
 | `pnpm dev` | Start the development server |
 | `pnpm build` / `pnpm start` | Production build and server |
-| `pnpm lint` | ESLint |
+| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript |
 | `pnpm test:db` | Database tests in an in-memory Postgres (PGlite). No Docker or Supabase needed |
+| `pnpm test:e2e [names…]` | Browser tests against a running app and the **development** database (see Testing) |
 | `pnpm db:migrate` | Apply new migrations to the database in `DATABASE_URL` |
 | `pnpm admin:create` | Create or promote the super admin |
 | `pnpm db:migrate:prod` / `pnpm admin:create:prod` | Same, using `.env.production.local` (your live project) |
@@ -291,8 +294,28 @@ pnpm db:backup        # live project → backups/messflow-live-YYYY-MM-DD_HHMM.s
 
 ## Testing
 
-`pnpm test:db` runs the database test suite against an in-memory Postgres. It covers meal generation, cutoffs,
-balances, month closing, opening balances, permissions and Row Level Security.
+**Database tests** (`pnpm test:db`): an in-memory Postgres, no setup needed. They cover meal generation, cutoffs,
+balances, month closing, opening balances, the weekly menu, permissions and Row Level Security.
+
+**Browser tests** (`pnpm test:e2e`): Playwright drives the real app the way people use it: the manager, members
+and khala, in Bangla and English, on phone and desktop. Each test creates its own `ZZ …` mess and `zz.<name>.<number>`
+logins in the **development** database (`.env.local`) and deletes them afterwards; the runner refuses to start if
+`.env.local` points at the live project.
+
+```bash
+pnpm exec playwright install chromium   # once per machine
+pnpm build && pnpm start -p 3300        # in another terminal (a production build catches the most)
+pnpm test:e2e                           # all main tests (~6 min)
+pnpm test:e2e cook weekly-menu          # only some (file names in tests/e2e/)
+pnpm test:e2e all                       # also every page × role × screen, and a speed report
+```
+
+Use another server with `E2E_BASE_URL=http://localhost:3000 pnpm test:e2e`. Screenshots go to `tests/e2e/.output/`.
+
+**Automatic checks:** every push and pull request runs typecheck, lint, the database tests and a production build on
+GitHub Actions (`.github/workflows/ci.yml`). Dependabot (`.github/dependabot.yml`) opens pull requests for security
+fixes right away and for small updates every Friday; merge them when the checks are green. Major upgrades
+(e.g. a new Next.js major) are left for a planned upgrade.
 
 ## License
 

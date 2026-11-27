@@ -43,3 +43,6 @@ next-env.d.ts
 
 # database backups (personal data + login hashes) - never commit
 /backups/
+
+# browser test screenshots
+/tests/e2e/.output/
