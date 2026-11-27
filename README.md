@@ -89,7 +89,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 **Mess life**
 - Bazar duty roster: weekly schedule or rotation, swaps, done/missed tracking
 - Notice board
-- Push notifications plus an in-app notification inbox
+- Push notifications plus an in-app notification inbox; after login a one-tap banner asks to turn them on
 - Due reminders with a custom note
 
 **Administration**
