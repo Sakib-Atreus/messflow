@@ -7,7 +7,9 @@
 **Mess management for bachelor messes in Bangladesh.**
 Meals, bazar, bills, deposits and balances in one place, in Bangla and English.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+<a href="https://messflow-rho.vercel.app"><img src="https://img.shields.io/badge/Open_MessFlow-0e8f3f?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Open MessFlow" height="40" /></a>
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-Android%20%7C%20iPhone-5A0FC8)
