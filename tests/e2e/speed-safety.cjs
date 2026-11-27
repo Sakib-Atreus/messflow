@@ -41,10 +41,13 @@ const ok = (n, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : 
     // 2. your own change refreshes the cached pages
     await navTo(p, "/dashboard");
     // switching mess (a save) must drop every cached page: do it and come back to Meals
+    // switching saves the choice, then reloads the whole page for the new mess: wait for that reload
+    // (the dropdown itself shows the new name instantly, before the page has reloaded)
+    const reloaded = p.waitForEvent("load", { timeout: 30000 });
     await p.locator("header select").selectOption(Z);
-    await p.waitForFunction((z) => document.querySelector("header select")?.value === z, Z, { timeout: 30000 });
+    await reloaded;
     await p.waitForLoadState("networkidle");
-    ok("switching mess updates the header at once", (await p.locator("header select").inputValue()) === Z);
+    ok("switching mess reloads the page for the new mess", (await p.locator("header select").inputValue()) === Z && (await p.locator("main").innerText()).length > 0);
     const afterSwitch = await rscDuring(p, () => navTo(p, "/meals"));
     const mealsText = await p.locator("main").innerText();
     ok("after switching mess, Meals loads fresh (not the old mess's page)", afterSwitch >= 1, `requests: ${afterSwitch}`);
