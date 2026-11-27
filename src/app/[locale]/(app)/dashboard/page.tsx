@@ -18,7 +18,8 @@ import { countMeals, effectiveMeal, getAvatars, getMealsBetween, getMembers, get
 import { mealWallet } from "@/lib/meal-wallet";
 import { MealMoneyCard, MealMoneyOverview } from "@/components/meal-money";
 import { SetupChecklist } from "@/components/setup-checklist";
-import { menuLine, type Menu } from "@/components/menu-card";
+import { menuLine } from "@/components/menu-card";
+import { getDayMenu } from "@/lib/menu";
 import { LeaveBanner } from "@/components/leave-banner";
 import { closedByLeave, getLeaves } from "@/lib/leave";
 import { getOpening } from "@/lib/opening";
@@ -36,7 +37,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const needSetup = isManager && !isVirtual;
   // everything loads at the same time; photos follow the member list as soon as it arrives
   const membersP = getMembers(supabase, mess.id);
-  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed, { data: menuRow }, leaves, opening, setupCounts, avatars] = await Promise.all([
+  const [summary, monthMeals, pending, joins, members, dueReach, duties, notice, deposits, bazar, fixed, menuRow, leaves, opening, setupCounts, avatars] = await Promise.all([
     getMonthSummary(supabase, mess.id, month),
     getMealsBetween(supabase, mess.id, month, today),
     can("deposits")
@@ -60,7 +61,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
     supabase.from("deposits").select("member_id, date, amount").eq("mess_id", mess.id).eq("status", "approved").gte("date", month).lte("date", today),
     supabase.from("bazar_entries").select("date, amount").eq("mess_id", mess.id).gte("date", month).lte("date", today),
     supabase.from("fixed_costs").select("category, amount").eq("mess_id", mess.id).eq("month", month),
-    supabase.from("meal_menus").select("breakfast, lunch, dinner").eq("mess_id", mess.id).eq("date", today).maybeSingle(),
+    getDayMenu(supabase, mess.id, today),
     getLeaves(supabase, mess.id, today, tomorrow),
     getOpening(supabase, mess.id),
     // first-time setup for managers: which steps are already done
@@ -73,7 +74,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
       : null,
     membersP.then((ms) => getAvatars(supabase, ms.map((m) => m.user_id))),
   ]);
-  const todayMenu = menuLine(menuRow as Menu, kinds, (k) => t(`meal.${k}`), locale);
+  const todayMenu = menuLine(menuRow, kinds, (k) => t(`meal.${k}`), locale);
   const closed = closedByLeave(leaves);
   const carryLabel = opening.month === month ? t("opening.line") : t("report.carryIn");
   const todayMeals = monthMeals.filter((m) => m.date === today);

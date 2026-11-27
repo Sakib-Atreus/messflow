@@ -4,7 +4,8 @@ import { Link } from "@/i18n/navigation";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { GuestPanel, GuestStepper, HalfToggle, MealToggle } from "@/components/meal-toggle";
 import { MealCalendar, type CalendarDay } from "@/components/meal-calendar";
-import { MenuCard, type Menu } from "@/components/menu-card";
+import { MenuCard, WeeklyMenuForm, type Menu } from "@/components/menu-card";
+import { getDayMenu, getWeeklyMenu, weekdayOf } from "@/lib/menu";
 import { LeaveBanner } from "@/components/leave-banner";
 import { LeavePanel } from "@/components/leave-panel";
 import { Drawer } from "@/components/drawer";
@@ -42,12 +43,15 @@ export default async function MealsPage({
   const gridStart = addDays(calMonth, -((new Date(`${calMonth}T00:00:00Z`).getUTCDay() + 1) % 7));
   const gridEnd = addDays(calEnd, (5 - new Date(`${calEnd}T00:00:00Z`).getUTCDay() + 7) % 7);
 
-  const [leaves, members, dayMeals, myMonth, { data: menu }] = await Promise.all([
+  const [leaves, members, dayMeals, myMonth, { data: dailyMenu }, dayMenu, week] = await Promise.all([
     getLeaves(supabase, mess.id, leaveFrom, leaveTo),
     getMembers(supabase, mess.id),
     getMealsBetween(supabase, mess.id, day, day),
     supabase.from("meals").select("*").eq("member_id", me.id).gte("date", calMonth).lte("date", calEnd),
     supabase.from("meal_menus").select("breakfast, lunch, dinner, note").eq("mess_id", mess.id).eq("date", day).maybeSingle(),
+    // what people see that day: its own dishes, else the weekly menu
+    getDayMenu(supabase, mess.id, day),
+    isManager ? getWeeklyMenu(supabase, mess.id) : Promise.resolve(new Map()),
   ]);
   const closed = closedByLeave(leaves);
   const upcoming = leaves.filter((l) => l.date >= today);
@@ -86,10 +90,16 @@ export default async function MealsPage({
         date={day}
         dateLabel={dayLabel || fmtDate(locale, day, { weekday: "short", day: "numeric", month: "short" })}
         kinds={kinds}
-        menu={menu as Menu}
+        menu={dayMenu}
+        daily={dailyMenu as Menu}
+        weekDishes={week.get(weekdayOf(day))}
         canEdit={isManager}
         action={
           isManager && (
+            <div className="flex flex-wrap gap-2">
+            <Drawer label={t("menu.weekly")} title={t("menu.weeklyTitle")} icon="week" side={false} className={btn.small}>
+              <WeeklyMenuForm kinds={kinds} week={week} />
+            </Drawer>
             <Drawer
               label={t("leave.title")}
               title={t("leave.title")}
@@ -100,6 +110,7 @@ export default async function MealsPage({
             >
               <LeavePanel upcoming={upcoming} past={leaves.filter((l) => l.date >= monthStart(today) && l.date < today)} kinds={kinds} locale={locale} />
             </Drawer>
+            </div>
           )
         }
         footer={

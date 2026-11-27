@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChefHat, Info, Scale, UserPlus } from "lucide-react";
+import { CalendarDays, ChefHat, Info, Scale, UserPlus } from "lucide-react";
 import { Modal } from "./modal";
 import { btn } from "./ui";
 
-const ICONS = { add: UserPlus, details: Info, chef: ChefHat, balance: Scale } as const;
+const ICONS = { add: UserPlus, details: Info, chef: ChefHat, balance: Scale, week: CalendarDays } as const;
 
 /**
  * A button that opens its content in a side panel (bottom sheet on phones), or a centred dialog with

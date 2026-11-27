@@ -68,6 +68,7 @@ designed to run entirely on free tiers (Vercel + Supabase).
 - Members turn meals on or off before a configurable cutoff; managers can change anything
 - Half meals and guest meals, with a month calendar view
 - Daily menu ("what to cook") written by the manager and shown to everyone
+- Weekly menu: write Saturday → Friday once and it repeats every week; any single day can still be changed
 
 **Money**
 - Opening balance: when moving from a notebook, enter each person's old due or credit once (first month only)

@@ -853,7 +853,15 @@
     "notSet": "The manager hasn't written the menu for this day yet.",
     "note": "Message for khala (optional)",
     "noteHint": "Only khala sees this, at the top of her page. Write in Bangla so she can read it easily.",
-    "notePlaceholder": "e.g. আজ রাতে ২ জন গেস্ট আসবে, ভাত একটু বেশি রাঁধবেন"
+    "notePlaceholder": "e.g. আজ রাতে ২ জন গেস্ট আসবে, ভাত একটু বেশি রাঁধবেন",
+    "weekly": "Weekly menu",
+    "weeklyTitle": "Weekly menu (Saturday → Friday)",
+    "weeklyHelp": "Write it once - it repeats every week. If one day is different, write it in that day's box: only that day changes.",
+    "weeklySave": "Save weekly menu",
+    "weeklySaved": "Weekly menu saved - it repeats every week.",
+    "fromWeekly": "Weekly: {dish}",
+    "emptyUsesWeekly": "Empty boxes use the weekly menu; anything you write changes this day only.",
+    "weeklyShort": "weekly"
   },
   "kitchen": {
     "title": "Today's cooking",

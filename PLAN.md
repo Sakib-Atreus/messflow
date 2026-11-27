@@ -166,6 +166,7 @@ member_month_bills  (month_id, member_id, meals, meal_cost, fixed_share,
                      deposits, carry_in, final_balance)
 opening_balances    (id, mess_id, member_id UNIQUE, month, amount,  -- + is owed, - owes
                      updated_by, updated_at)
+weekly_menus        (id, mess_id, weekday 0-6, breakfast, lunch, dinner)  -- repeats weekly
 notices             (id, mess_id, title, body, pinned, created_by)
 complaints          (id, mess_id, member_id null, body, status, anonymous)
 push_subscriptions  (id, user_id, endpoint, keys)
@@ -263,6 +264,7 @@ messflow/
 - [x] Managers reset a member's forgotten password (with safety rules); super admin for everyone else
 - [x] Backups: `pnpm db:backup` (full data + logins, restore tested), backup card in the admin panel, weekly + month-close reminders
 - [x] Opening balance from the old notebook (first month only, then locked)
+- [x] Weekly menu (Sat → Fri, repeats every week); a day's own menu wins meal by meal
 - [ ] Manager handover
 
 ---

@@ -1,20 +1,29 @@
 import type { ReactNode } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { CookingPot } from "lucide-react";
+import { CookingPot, Repeat } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, Field, inputClass } from "@/components/ui";
-import { saveMenu } from "@/lib/actions/people";
+import { saveMenu, saveWeeklyMenu } from "@/lib/actions/people";
 import type { MealKind } from "@/lib/types";
 import { translateMenu } from "@/lib/dishes";
+import { fmtDate } from "@/lib/format";
+import { WEEK_ORDER, type DayMenu, type WeekDishes } from "@/lib/menu";
 
 export type Menu = (Partial<Record<MealKind, string | null>> & { note?: string | null }) | null;
 
-/** "What to cook" for one day: the manager writes it, everyone else reads it. */
-export async function MenuCard({ date, dateLabel, kinds, menu, canEdit, action, footer }: {
+/**
+ * "What to cook" for one day: the manager writes it, everyone else reads it.
+ * `menu` is what people see (the day's own dishes, else the weekly menu). For the manager's form,
+ * `daily` is only what was written for this day and `weekDishes` the weekly menu for this weekday,
+ * shown as grey hints: an empty box means "use the weekly menu".
+ */
+export async function MenuCard({ date, dateLabel, kinds, menu, daily, weekDishes, canEdit, action, footer }: {
   date: string;
   dateLabel: string;
   kinds: MealKind[];
-  menu: Menu;
+  menu: DayMenu;
+  daily?: Menu;
+  weekDishes?: WeekDishes;
   canEdit: boolean;
   /** shown in the card header (e.g. the "Khala's leave" button) */
   action?: ReactNode;
@@ -24,6 +33,7 @@ export async function MenuCard({ date, dateLabel, kinds, menu, canEdit, action, 
   const t = await getTranslations();
   const title = `${t("menu.title")} · ${dateLabel}`;
   if (canEdit) {
+    const hasWeekly = kinds.some((k) => weekDishes?.[k]);
     return (
       <Card title={title} icon={CookingPot} action={action}>
         <ActionForm action={saveMenu} reset={false} key={date}>
@@ -31,13 +41,22 @@ export async function MenuCard({ date, dateLabel, kinds, menu, canEdit, action, 
           <div className="grid gap-3 sm:grid-cols-2">
             {kinds.map((k) => (
               <Field key={k} label={t(`meal.${k}`)}>
-                <input name={k} maxLength={200} defaultValue={menu?.[k] ?? ""} placeholder={t("menu.placeholder")} className={inputClass} />
+                <input
+                  name={k}
+                  maxLength={200}
+                  defaultValue={daily?.[k] ?? ""}
+                  placeholder={weekDishes?.[k] ? t("menu.fromWeekly", { dish: weekDishes[k]! }) : t("menu.placeholder")}
+                  className={inputClass}
+                />
               </Field>
             ))}
           </div>
-          <p className="text-xs text-slate-500">{t("menu.help")}</p>
+          <p className="text-xs text-slate-500">
+            {hasWeekly && <span className="font-medium text-slate-600 dark:text-slate-300">{t("menu.emptyUsesWeekly")} </span>}
+            {t("menu.help")}
+          </p>
           <Field label={t("menu.note")} hint={t("menu.noteHint")}>
-            <textarea name="note" rows={2} maxLength={500} defaultValue={menu?.note ?? ""} placeholder={t("menu.notePlaceholder")} className={inputClass} />
+            <textarea name="note" rows={2} maxLength={500} defaultValue={daily?.note ?? ""} placeholder={t("menu.notePlaceholder")} className={inputClass} />
           </Field>
           <SubmitButton>{t("menu.save")}</SubmitButton>
         </ActionForm>
@@ -54,7 +73,14 @@ export async function MenuCard({ date, dateLabel, kinds, menu, canEdit, action, 
           {set.map((k) => (
             <div key={k} className="flex gap-2">
               <dt className="w-16 shrink-0 text-slate-500">{t(`meal.${k}`)}</dt>
-              <dd className="font-medium">{translateMenu(menu![k], locale)}</dd>
+              <dd className="font-medium">
+                {translateMenu(menu![k], locale)}
+                {menu?.weekly?.[k] && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-slate-400" title={t("menu.weekly")}>
+                    <Repeat className="size-3" /> {t("menu.weeklyShort")}
+                  </span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
@@ -63,6 +89,40 @@ export async function MenuCard({ date, dateLabel, kinds, menu, canEdit, action, 
       )}
       {footer}
     </Card>
+  );
+}
+
+/** Manager: the weekly menu, Saturday → Friday. Written once, it repeats every week. */
+export async function WeeklyMenuForm({ kinds, week }: { kinds: MealKind[]; week: Map<number, WeekDishes> }) {
+  const t = await getTranslations();
+  const locale = await getLocale();
+  // 22 Nov 2026 was a Sunday, so 22 + weekday number gives a date with that weekday's name
+  const dayName = (d: number) => fmtDate(locale, `2026-11-${22 + d}`, { weekday: "long" });
+  return (
+    <ActionForm action={saveWeeklyMenu} reset={false}>
+      <p className="text-sm text-slate-600 dark:text-slate-400">{t("menu.weeklyHelp")}</p>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        {WEEK_ORDER.map((d) => (
+          <div key={d} data-weekday={d} className="grid gap-2 py-3 sm:grid-cols-[7rem_1fr] sm:items-center">
+            <div className="font-semibold">{dayName(d)}</div>
+            <div className={kinds.length === 3 ? "grid gap-2 sm:grid-cols-3" : "grid gap-2 sm:grid-cols-2"}>
+              {kinds.map((k) => (
+                <input
+                  key={k}
+                  name={`${d}_${k}`}
+                  maxLength={200}
+                  defaultValue={week.get(d)?.[k] ?? ""}
+                  placeholder={t(`meal.${k}`)}
+                  aria-label={`${dayName(d)} - ${t(`meal.${k}`)}`}
+                  className={inputClass}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <SubmitButton>{t("menu.weeklySave")}</SubmitButton>
+    </ActionForm>
   );
 }
 

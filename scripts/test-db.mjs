@@ -397,5 +397,38 @@ ok('notification_log hidden', (await as(B, `select count(*)::int n from notifica
 const svc = (await asRole('service_role', '', `select month_summary($1, today_dhaka()) s`, [mess])).rows[0].s;
 ok('service role reads summary', svc.members.length === 3);
 await throws('anon cannot read summary', () => asRole('anon', '', `select month_summary($1, today_dhaka())`, [mess]), 'permission denied');
+// ---- weekly menu: written once per weekday, a day's own menu wins meal by meal
+{
+  // two weeks ahead: same weekday as today, and no daily menu written yet by the earlier tests
+  const day = (await db.query(`select (today_dhaka() + 14)::text d, extract(dow from today_dhaka())::int w`)).rows[0];
+  const wd = day.w, other = (wd + 1) % 7, X = '00000000-0000-0000-0000-0000000000ee';
+  await as(A, `insert into weekly_menus(mess_id, weekday, lunch, dinner) values ($1, $2, 'Rice, chicken', 'Rice, fish'), ($1, $3, 'Khichuri', null)`, [mess, wd, other]);
+  await throws('member cannot write the weekly menu', () => as(B, `insert into weekly_menus(mess_id, weekday, lunch) values ($1, $2, 'x')`, [mess, (wd + 2) % 7]), 'row-level security');
+  ok('member cannot change the weekly menu', (await as(B, `update weekly_menus set lunch = 'hacked' where mess_id = $1 returning id`, [mess])).rows.length === 0);
+  ok('outsider cannot read the weekly menu', (await as(X, `select count(*)::int n from weekly_menus`)).rows[0].n === 0);
+  ok('outsider gets no day menu', (await as(X, `select menu_for_day($1, $2::date) m`, [mess, day.d])).rows[0].m === null);
+  let m = (await as(B, `select menu_for_day($1, $2::date) m`, [mess, day.d])).rows[0].m;
+  ok('member sees the day from the weekly menu', m?.lunch === 'Rice, chicken' && m?.dinner === 'Rice, fish' && m?.weekly?.lunch === true, JSON.stringify(m));
+  ok('the next day uses its own weekday', (await as(B, `select menu_for_day($1, $2::date + 1) m`, [mess, day.d])).rows[0].m?.lunch === 'Khichuri');
+  ok('a weekday with nothing set gives no menu', (await as(B, `select menu_for_day($1, $2::date + 2) m`, [mess, day.d])).rows[0].m === null);
+  // the day's own menu changes lunch only; dinner still comes from the weekly menu
+  await as(A, `insert into meal_menus(mess_id, date, lunch, note) values ($1, $2::date, 'Polao, beef', 'guests tonight')`, [mess, day.d]);
+  m = (await as(B, `select menu_for_day($1, $2::date) m`, [mess, day.d])).rows[0].m;
+  ok('daily menu wins for that meal, weekly fills the rest', m.lunch === 'Polao, beef' && m.weekly.lunch === false && m.dinner === 'Rice, fish' && m.weekly.dinner === true && m.note === 'guests tonight', JSON.stringify(m));
+  ok('a week later the weekly menu is back', (await as(B, `select menu_for_day($1, $2::date + 7) m`, [mess, day.d])).rows[0].m?.lunch === 'Rice, chicken');
+  await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
+  let cook = (await db.query(`select user_id from mess_cooks where mess_id = $1 limit 1`, [mess])).rows[0]?.user_id;
+  const added = !cook;
+  if (added) { cook = X; await db.query(`insert into mess_cooks(mess_id, user_id, name) values ($1, $2, 'Khala')`, [mess, X]).catch(() => { cook = null; }); }
+  if (cook) {
+    const k = (await as(cook, `select kitchen_day($1, $2::date) k`, [mess, day.d])).rows[0].k;
+    ok('khala\'s page gets the merged menu', k.menu?.lunch === 'Polao, beef' && k.menu?.dinner === 'Rice, fish' && k.menu?.note === 'guests tonight', JSON.stringify(k.menu));
+    ok('khala can read the weekly menu', (await as(cook, `select count(*)::int n from weekly_menus`)).rows[0].n === 2);
+    await throws('khala cannot write the weekly menu', () => as(cook, `insert into weekly_menus(mess_id, weekday, lunch) values ($1, $2, 'x')`, [mess, (wd + 3) % 7]), 'row-level security');
+  } else ok('khala test account available', false);
+  await throws('anon cannot read a day menu', () => asRole('anon', '', `select menu_for_day($1, $2::date)`, [mess, day.d]), 'permission denied');
+  await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
+  if (added && cook) await db.query(`delete from mess_cooks where user_id = $1`, [cook]);
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

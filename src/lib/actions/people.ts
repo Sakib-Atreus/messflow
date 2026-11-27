@@ -245,6 +245,27 @@ export async function saveMenu(_: ActionResult, fd: FormData): Promise<ActionRes
   return done({ message: "menu.saved" });
 }
 
+/** Manager: the weekly menu, one row per weekday (Saturday → Friday). It repeats every week; a day's own
+ *  menu still wins for that day. Empty weekdays are removed. Fields are named `<weekday>_<meal>`. */
+export async function saveWeeklyMenu(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { supabase, mess, user, isManager } = await getContext();
+  if (!isManager) return { error: "FORBIDDEN" };
+  const line = (d: number, k: string) => str(fd, `${d}_${k}`).slice(0, 200) || null;
+  const rows = [0, 1, 2, 3, 4, 5, 6].map((d) => ({ weekday: d, breakfast: line(d, "breakfast"), lunch: line(d, "lunch"), dinner: line(d, "dinner") }));
+  const filled = rows.filter((r) => r.breakfast || r.lunch || r.dinner);
+  const empty = rows.filter((r) => !(r.breakfast || r.lunch || r.dinner)).map((r) => r.weekday);
+  const now = new Date().toISOString();
+  const [up, del] = await Promise.all([
+    filled.length
+      ? supabase.from("weekly_menus").upsert(filled.map((r) => ({ mess_id: mess.id, ...r, updated_by: user.id, updated_at: now })), { onConflict: "mess_id,weekday" })
+      : Promise.resolve({ error: null }),
+    empty.length ? supabase.from("weekly_menus").delete().eq("mess_id", mess.id).in("weekday", empty) : Promise.resolve({ error: null }),
+  ]);
+  const error = up.error ?? del.error;
+  if (error) return { error: toErrorKey(error) };
+  return done({ message: "menu.weeklySaved" });
+}
+
 // ---------------------------------------------------------------- khala's leave
 type Kind = "breakfast" | "lunch" | "dinner";
 const KINDS: Kind[] = ["breakfast", "lunch", "dinner"];
